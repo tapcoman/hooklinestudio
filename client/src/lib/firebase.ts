@@ -32,16 +32,31 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// Debug environment variables at build time
+console.log("[Firebase] Environment check:", {
+  VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY ? "present" : "missing",
+  VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID ? "present" : "missing",
+  NODE_ENV: import.meta.env.NODE_ENV,
+  buildTime: new Date().toISOString(),
+});
+
 // Avoid initializing on server or with missing keys
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 
 if (isBrowser) {
-  // Check for required environment variables
-  const hasApiKey = !!firebaseConfig.apiKey;
-  const hasAppId = !!firebaseConfig.appId;
+  // Check for required environment variables with better validation
+  const hasValidApiKey = !!(firebaseConfig.apiKey && 
+    firebaseConfig.apiKey !== "undefined" && 
+    firebaseConfig.apiKey !== "missing" &&
+    firebaseConfig.apiKey.length > 10);
   
-  if (hasApiKey && hasAppId) {
+  const hasValidAppId = !!(firebaseConfig.appId && 
+    firebaseConfig.appId !== "undefined" && 
+    firebaseConfig.appId !== "missing" &&
+    firebaseConfig.appId.includes(":"));
+  
+  if (hasValidApiKey && hasValidAppId) {
     try {
       app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
       auth = getAuth(app);
@@ -58,21 +73,45 @@ if (isBrowser) {
 
       // Safe logging (no secrets)
       const opts = app.options || {};
-      console.log("[Firebase] init OK", {
+      console.log("[Firebase] ✅ Initialization successful", {
         projectId: opts.projectId,
         authDomain: opts.authDomain,
-        appId: opts.appId ? "present" : "missing",
-        apiKey: firebaseConfig.apiKey ? "present" : "missing",
+        appId: opts.appId ? "configured" : "missing",
+        apiKey: firebaseConfig.apiKey ? "configured" : "missing",
         storageBucket: opts.storageBucket,
       });
     } catch (e) {
-      console.error("[Firebase] initialization failed:", e);
+      console.error("[Firebase] ❌ Initialization failed:", e);
+      // Set auth to null so functions know Firebase is not available
+      auth = null;
     }
   } else {
-    console.warn("[Firebase] Skipped init - missing environment variables:", {
-      VITE_FIREBASE_API_KEY: hasApiKey ? "present" : "missing",
-      VITE_FIREBASE_APP_ID: hasAppId ? "present" : "missing",
-      hint: "Set these environment variables in your deployment platform (Railway) to enable Firebase authentication"
+    console.warn("[Firebase] ⚠️ Skipped initialization - missing or invalid environment variables");
+    console.warn("[Firebase] Required environment variables for client-side Firebase:");
+    console.warn("- VITE_FIREBASE_API_KEY: Client-side Firebase API key");
+    console.warn("- VITE_FIREBASE_APP_ID: Firebase App ID");
+    console.warn("");
+    console.warn("Current status:");
+    console.warn(`- VITE_FIREBASE_API_KEY: ${hasValidApiKey ? "✅ Valid" : "❌ Invalid/Missing"}`);
+    console.warn(`- VITE_FIREBASE_APP_ID: ${hasValidAppId ? "✅ Valid" : "❌ Invalid/Missing"}`);
+    console.warn("");
+    console.warn("🔧 For Railway deployment:");
+    console.warn("1. Set VITE_FIREBASE_API_KEY in Railway environment variables");
+    console.warn("2. Set VITE_FIREBASE_APP_ID in Railway environment variables");
+    console.warn("3. Ensure these are build-time variables, not just runtime variables");
+    console.warn("");
+    console.warn("💡 Note: VITE_ prefix is required for client-side access in Vite");
+    
+    // Show current values for debugging (masked for security)
+    console.warn("Debug info:", {
+      apiKeyType: typeof firebaseConfig.apiKey,
+      apiKeyValue: firebaseConfig.apiKey ? 
+        `${firebaseConfig.apiKey.substring(0, 8)}...` : 
+        firebaseConfig.apiKey,
+      appIdType: typeof firebaseConfig.appId,
+      appIdValue: firebaseConfig.appId ? 
+        `${firebaseConfig.appId.substring(0, 8)}...` : 
+        firebaseConfig.appId,
     });
   }
 } else {
@@ -116,7 +155,10 @@ export const isFirebaseConfigured = () => !!auth;
  *  ================================================================================= */
 
 export const loginWithEmail = async (email: string, password: string) => {
-  if (!auth) throw new Error("Firebase not configured");
+  if (!auth) {
+    console.error("[Firebase] Authentication not available - Firebase not properly configured");
+    throw new Error("Firebase authentication is not configured. Please check your environment variables.");
+  }
   try {
     return await signInWithEmailAndPassword(auth, email, password);
   } catch (error: any) {
@@ -135,7 +177,10 @@ export const registerWithEmail = async (
   firstName: string,
   lastName: string
 ) => {
-  if (!auth) throw new Error("Firebase not configured");
+  if (!auth) {
+    console.error("[Firebase] Authentication not available - Firebase not properly configured");
+    throw new Error("Firebase authentication is not configured. Please check your environment variables.");
+  }
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -166,7 +211,10 @@ export const registerWithEmail = async (
 };
 
 export const logoutUser = () => {
-  if (!auth) throw new Error("Firebase not configured");
+  if (!auth) {
+    console.error("[Firebase] Authentication not available - Firebase not properly configured");
+    throw new Error("Firebase authentication is not configured. Please check your environment variables.");
+  }
   return signOut(auth);
 };
 
@@ -180,7 +228,10 @@ export const sendVerificationEmail = (user: User) => {
  *  ================================================================================= */
 
 export async function signInWithGoogle() {
-  if (!auth) throw new Error("Firebase not configured");
+  if (!auth) {
+    console.error("[Firebase] Authentication not available - Firebase not properly configured");
+    throw new Error("Firebase authentication is not configured. Please check your environment variables.");
+  }
 
   const provider = new GoogleAuthProvider();
   // Minimal OpenID scopes

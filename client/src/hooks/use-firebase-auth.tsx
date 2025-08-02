@@ -45,7 +45,9 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   // Listen to Firebase auth state changes
   useEffect(() => {
     if (!auth) {
+      console.warn("[Auth] Firebase authentication not available - environment variables not configured");
       setLoading(false);
+      setIsAuthReady(true); // Mark as ready so UI can show appropriate messaging
       return;
     }
     
@@ -120,7 +122,7 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
       
       // Use Firebase client SDK for password validation
       if (!auth) {
-        throw new Error('Firebase not configured');
+        throw new Error('Firebase authentication is not configured. Please check your environment variables (VITE_FIREBASE_API_KEY and VITE_FIREBASE_APP_ID).');
       }
       
       const { signInWithEmailAndPassword } = await import('firebase/auth');
