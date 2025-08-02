@@ -23,7 +23,7 @@ import { MobileBottomBar } from "../components/MobileBottomBar";
 import { MobileSidebar } from "../components/MobileSidebar";
 import { MobileHookViewer } from "../components/MobileHookViewer";
 import { MobileLoading, MobileHookCardSkeleton } from "../components/MobileLoading";
-import { ErrorBoundary } from "../components/error-boundary";
+import ErrorBoundary from "../components/error-boundary";
 
 // Lazy load heavy components for better performance
 const HookResults = lazy(() => import("../components/hook-results"));
