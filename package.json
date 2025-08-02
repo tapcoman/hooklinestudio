@@ -14,8 +14,7 @@
     "db:push": "drizzle-kit push",
     "db:migrate": "tsx server/scripts/migrate.ts",
     "db:generate": "drizzle-kit generate",
-    "postinstall": "npm run check",
-    "railway:build": "npm run build && npm run db:migrate",
+    "railway:build": "npm run build",
     "railway:start": "NODE_ENV=production node dist/index.js",
     "health": "curl -f http://localhost:${PORT:-5000}/health || exit 1"
   },
