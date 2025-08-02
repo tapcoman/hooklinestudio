@@ -42,7 +42,7 @@ const isRailwayInternalUrl = process.env.DATABASE_URL?.includes('railway.interna
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
   max: process.env.NODE_ENV === 'production' ? 20 : 15, // Reduced max connections for Railway stability
-  min: isRailwayEnvironment ? 0 : 2, // No minimum connections for Railway to reduce connection pressure
+  min: isRailwayEnvironment ? 1 : 2, // Maintain at least 1 connection for Railway health checks
   idleTimeoutMillis: isRailwayEnvironment ? 30000 : 60000, // Shorter idle timeout for Railway
   connectionTimeoutMillis: isRailwayInternalUrl ? 15000 : 5000, // Longer timeout for Railway internal URLs
   statementTimeout: 20000, // Shorter statement timeout

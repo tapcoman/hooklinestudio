@@ -12,7 +12,78 @@ validateEnvironment();
 
 const app = express();
 
-// Production security middleware
+// Health check routes MUST come before HTTPS redirect to prevent redirect loops
+// These endpoints are used by Railway for health checks and must be accessible via HTTP
+app.get('/health', async (req, res) => {
+  const startTime = Date.now();
+  const healthCheck = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime(),
+    version: process.env.npm_package_version || '1.0.0',
+    services: {
+      database: 'unknown',
+      firebase: process.env.FIREBASE_PROJECT_ID ? 'configured' : 'not_configured',
+      stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not_configured',
+      openai: process.env.OPENAI_API_KEY ? 'configured' : 'not_configured'
+    },
+    checks: {
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        free: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        total: Math.round(process.memoryUsage().rss / 1024 / 1024)
+      }
+    }
+  };
+
+  try {
+    // Quick database check with timeout
+    const { pool } = await import('./db');
+    const dbCheckPromise = pool.query('SELECT 1 as health_check');
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database timeout')), 3000)
+    );
+    
+    await Promise.race([dbCheckPromise, timeoutPromise]);
+    healthCheck.services.database = 'connected';
+  } catch (error) {
+    console.error('Health check database error:', error);
+    healthCheck.services.database = 'disconnected';
+    // Don't fail health check to prevent restart loops
+  }
+
+  const responseTime = Date.now() - startTime;
+  healthCheck.checks = {
+    ...healthCheck.checks,
+    responseTime: `${responseTime}ms`
+  };
+
+  // Always return 200 for Railway health checks to prevent restart loops
+  res.status(200).json(healthCheck);
+});
+
+// Readiness probe for Railway
+app.get('/ready', (req, res) => {
+  res.status(200).json({
+    status: 'ready',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Liveness probe for Railway - simple endpoint that always responds
+app.get('/live', (req, res) => {
+  res.status(200).json({
+    status: 'alive',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    railway: process.env.RAILWAY_ENVIRONMENT || 'local'
+  });
+});
+
+// Production security middleware (applied AFTER health checks)
 app.use(forceHTTPS);
 app.use(productionSecurityHeaders);
 
@@ -74,11 +145,7 @@ app.use((req, res, next) => {
     const env = getEnv();
     const port = env.PORT;
     
-    // For Railway deployments, add a small startup delay to ensure database connections are ready
-    if (env.RAILWAY_ENVIRONMENT) {
-      logger.info('Railway environment detected, adding startup delay...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
-    }
+    // Railway environment detected - no startup delay needed as health checks handle readiness
     
     const httpServer = server.listen({
       port,
