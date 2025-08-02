@@ -1,6 +1,5 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm ci && npm run railway:build"
 
 [deploy]
 startCommand = "node migrate.js && npm run railway:start"
@@ -28,3 +27,9 @@ incrementalBuilds = true
 [nixpacks]
 # Optimize for Node.js production
 staticDir = "./dist/public"
+
+[nixpacks.variables]
+NPM_CONFIG_CACHE = "/tmp/.npm"
+NPM_CONFIG_UPDATE_NOTIFIER = "false"
+NPM_CONFIG_FUND = "false"
+NPM_CONFIG_AUDIT = "false"

@@ -1,0 +1,23 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm"]
+
+[phases.install]
+cmds = [
+  "npm ci --cache /tmp/.npm --no-optional --no-fund --no-audit"
+]
+
+[phases.build]
+cmds = [
+  "npm run railway:build"
+]
+
+[variables]
+NPM_CONFIG_CACHE = "/tmp/.npm"
+NPM_CONFIG_UPDATE_NOTIFIER = "false"
+NPM_CONFIG_FUND = "false" 
+NPM_CONFIG_AUDIT = "false"
+NPM_CONFIG_PROGRESS = "false"
+NODE_ENV = "production"
+
+[start]
+cmd = "node migrate.js && npm run railway:start"
