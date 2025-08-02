@@ -40,8 +40,68 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    // Migrations are now handled by Railway's preDeployCommand
-    // This ensures migrations run when database is accessible but before app starts
+    // Run migrations on server startup for Railway compatibility
+    // Railway's pre-deployment phase doesn't have reliable database access
+    if (isProduction()) {
+      logger.info('Running database migrations...');
+      try {
+        const { migrate } = await import("drizzle-orm/neon-serverless/migrator");
+        const { db } = await import("./db");
+        const path = await import("path");
+        
+        // Resolve migrations folder path from project root
+        const migrationsPath = path.resolve(process.cwd(), "migrations");
+        
+        // Check if migrations folder exists
+        const fs = await import('fs');
+        if (fs.existsSync(migrationsPath)) {
+          console.log("Running database migrations...");
+          
+          // Retry migration execution for Railway connectivity issues
+          let retryCount = 0;
+          const maxRetries = 3;
+          
+          while (retryCount < maxRetries) {
+            try {
+              await migrate(db, { migrationsFolder: migrationsPath });
+              console.log("Database migrations completed successfully");
+              logger.info("Database migrations completed successfully");
+              break;
+            } catch (migrationError) {
+              retryCount++;
+              const errorMessage = migrationError instanceof Error ? migrationError.message : String(migrationError);
+              
+              console.warn(`Migration attempt ${retryCount}/${maxRetries} failed:`, errorMessage);
+              
+              // Check for Railway internal connectivity issues
+              const isRailwayConnectivity = errorMessage.includes('postgres.railway.internal') || 
+                                          errorMessage.includes('ECONNREFUSED') ||
+                                          errorMessage.includes('connection refused');
+              
+              if (isRailwayConnectivity && retryCount < maxRetries) {
+                console.log(`Railway database connectivity issue detected, waiting 10 seconds before retry ${retryCount + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 10000));
+                continue;
+              }
+              
+              if (retryCount >= maxRetries) {
+                // Don't crash the server, but log the error
+                logger.error("Failed to run migrations, but continuing server startup", migrationError instanceof Error ? migrationError : new Error(String(migrationError)));
+                console.error("Failed to run migrations, but continuing server startup");
+                break;
+              }
+            }
+          }
+        } else {
+          console.log("No migrations folder found, skipping migrations");
+        }
+      } catch (migrationError) {
+        // Don't crash the server on migration errors
+        logger.error("Error during migration setup", migrationError instanceof Error ? migrationError : new Error(String(migrationError)));
+        console.error("Error during migration setup, continuing with server startup");
+      }
+    }
+    
     logger.info('Starting application server...');
     
     const server = await registerRoutes(app);

@@ -8,6 +8,8 @@ healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
+# Migration will now run on server startup with proper Railway connectivity handling
+
 [env]
 NODE_ENV = "production"
 PORT = { default = "5000" }

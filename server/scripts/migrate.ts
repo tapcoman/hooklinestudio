@@ -22,16 +22,45 @@ async function runMigration() {
     }
     console.log("DATABASE_URL is configured");
     
-    // Test database connectivity first
+    // Test database connectivity first, but handle Railway's internal URL timing issues
     console.log("Testing database connectivity...");
-    try {
-      // Simple connectivity test using sql`` template
-      const { sql } = await import("drizzle-orm");
-      await db.execute(sql`SELECT 1 as test`);
-      console.log("Database connectivity test passed");
-    } catch (connectError) {
-      console.error("Database connectivity test failed:", connectError);
-      throw new Error(`Database connection failed: ${connectError instanceof Error ? connectError.message : String(connectError)}`);
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        // Simple connectivity test using sql`` template
+        const { sql } = await import("drizzle-orm");
+        await db.execute(sql`SELECT 1 as test`);
+        console.log("Database connectivity test passed");
+        break;
+      } catch (connectError) {
+        retryCount++;
+        console.warn(`Database connectivity test failed (attempt ${retryCount}/${maxRetries}):`, connectError);
+        
+        // Check if this is Railway's internal URL connection refused error
+        const errorMessage = connectError instanceof Error ? connectError.message : String(connectError);
+        const isRailwayInternalError = errorMessage.includes('postgres.railway.internal') && 
+                                     errorMessage.includes('ECONNREFUSED');
+        
+        if (isRailwayInternalError && retryCount < maxRetries) {
+          console.log(`Railway internal database URL not ready yet, waiting 5 seconds before retry ${retryCount + 1}...`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue;
+        }
+        
+        if (retryCount >= maxRetries) {
+          // For Railway deployment, continue with migration even if connectivity test fails
+          // The database might be accessible for migrations even if the websocket test fails
+          if (process.env.RAILWAY_ENVIRONMENT) {
+            console.warn("Skipping connectivity test for Railway deployment - proceeding with migration");
+            console.warn("Railway internal URLs may not be accessible during pre-deployment");
+            break;
+          } else {
+            throw new Error(`Database connection failed after ${maxRetries} attempts: ${errorMessage}`);
+          }
+        }
+      }
     }
     
     // Resolve migrations folder path from project root
@@ -46,11 +75,39 @@ async function runMigration() {
     
     logger.info("Starting database migration...");
     
-    await migrate(db, { migrationsFolder: migrationsPath });
+    // Retry migration execution in case of transient Railway connectivity issues
+    let migrationRetryCount = 0;
+    const maxMigrationRetries = 3;
     
-    console.log("Database migration completed successfully");
-    console.log("=== Migration Complete ===");
-    logger.info("Database migration completed successfully");
+    while (migrationRetryCount < maxMigrationRetries) {
+      try {
+        await migrate(db, { migrationsFolder: migrationsPath });
+        console.log("Database migration completed successfully");
+        console.log("=== Migration Complete ===");
+        logger.info("Database migration completed successfully");
+        break;
+      } catch (migrationError) {
+        migrationRetryCount++;
+        const errorMessage = migrationError instanceof Error ? migrationError.message : String(migrationError);
+        
+        console.warn(`Migration attempt ${migrationRetryCount}/${maxMigrationRetries} failed:`, errorMessage);
+        
+        // Check for Railway internal connectivity issues
+        const isRailwayConnectivity = errorMessage.includes('postgres.railway.internal') || 
+                                    errorMessage.includes('ECONNREFUSED') ||
+                                    errorMessage.includes('connection refused');
+        
+        if (isRailwayConnectivity && migrationRetryCount < maxMigrationRetries) {
+          console.log(`Railway database connectivity issue detected, waiting 10 seconds before retry ${migrationRetryCount + 1}...`);
+          await new Promise(resolve => setTimeout(resolve, 10000));
+          continue;
+        }
+        
+        if (migrationRetryCount >= maxMigrationRetries) {
+          throw migrationError;
+        }
+      }
+    }
     process.exit(0);
   } catch (error) {
     console.error("=== Migration Failed ===");
