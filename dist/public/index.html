@@ -17,8 +17,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
     <!-- Optimized font loading with font-display: swap for better CLS -->
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700&display=swap">
     <noscript>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700&display=swap">
@@ -63,9 +63,8 @@
     </style>
     
     <!-- Preload critical assets -->
-    <link rel="modulepreload" href="data:application/octet-stream;base64,aW1wb3J0IFJlYWN0IGZyb20gInJlYWN0IjsKaW1wb3J0IHsgY3JlYXRlUm9vdCB9IGZyb20gInJlYWN0LWRvbS9jbGllbnQiOwppbXBvcnQgQXBwIGZyb20gIi4vQXBwIjsKaW1wb3J0ICIuL2luZGV4LmNzcyI7CgpjcmVhdGVSb290KGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJyb290IikhKS5yZW5kZXIoPEFwcCAvPik7Cg==">
-    <link rel="modulepreload" href="/assets/App-CWaD-ciA.tsx">
-    <link rel="modulepreload" href="/assets/ConversionHero-DpAPOTFX.tsx">
+    <link rel="modulepreload" href="/assets/js/index-BhzklVVH.js">
+    <link rel="stylesheet" href="/assets/css/index-B73sGp3t.css">
     
     <!-- Open Graph and social media optimization -->
     <meta property="og:title" content="Hook Line Studio - AI Hook Generator">
@@ -83,16 +82,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
     
-    <!-- Service Worker registration for caching -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {
-            // Silently fail - SW is enhancement only
-          });
-        });
-      }
-    </script>
+    <!-- Service Worker registration moved to external file for CSP compliance -->
     <script type="module" crossorigin src="/assets/js/index-BhzklVVH.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/css/index-B73sGp3t.css">
   </head>
