@@ -3,7 +3,7 @@ nixPkgs = ["nodejs_20"]
 
 [phases.install]
 cmds = [
-  "npm ci --cache /tmp/.npm --no-fund --no-audit"
+  "npm ci --cache /tmp/.npm --omit=dev --include=optional --no-fund --no-audit"
 ]
 
 [phases.build]
