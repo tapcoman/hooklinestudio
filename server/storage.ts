@@ -606,13 +606,23 @@ export class DatabaseStorage implements IStorage {
     return result as Array<{ platform: string; totalGenerations: number; avgScore: number }>;
   }
 
+  private lastHealthCheck: { result: boolean; timestamp: number } | null = null;
+  
   async healthCheck(): Promise<boolean> {
+    // Cache health check result for 30 seconds to reduce database load
+    const now = Date.now();
+    if (this.lastHealthCheck && (now - this.lastHealthCheck.timestamp) < 30000) {
+      return this.lastHealthCheck.result;
+    }
+    
     try {
       // Simple query to test database connectivity
       await db.select().from(users).limit(1);
+      this.lastHealthCheck = { result: true, timestamp: now };
       return true;
     } catch (error) {
       console.error("Database health check failed:", error);
+      this.lastHealthCheck = { result: false, timestamp: now };
       throw error;
     }
   }
