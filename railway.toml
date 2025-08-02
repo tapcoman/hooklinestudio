@@ -2,9 +2,6 @@
 builder = "nixpacks"
 
 [deploy]
-# Pre-deployment command runs AFTER build but BEFORE app starts
-# This is when database is accessible but app hasn't started yet
-preDeployCommand = "npm run railway:migrate"
 startCommand = "npm run railway:start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300

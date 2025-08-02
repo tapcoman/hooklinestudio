@@ -25,8 +25,9 @@ async function runMigration() {
     // Test database connectivity first
     console.log("Testing database connectivity...");
     try {
-      // Simple connectivity test
-      await db.execute({ sql: "SELECT 1 as test", args: [] });
+      // Simple connectivity test using sql`` template
+      const { sql } = await import("drizzle-orm");
+      await db.execute(sql`SELECT 1 as test`);
       console.log("Database connectivity test passed");
     } catch (connectError) {
       console.error("Database connectivity test failed:", connectError);
