@@ -9,6 +9,27 @@ import history from "connect-history-api-fallback";
 // Validate environment variables before starting server
 validateEnvironment();
 
+// Run database migrations in production
+async function runMigrationsIfNeeded() {
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      logger.info('Running database migrations...');
+      const { migrate } = await import('drizzle-orm/neon-serverless/migrator');
+      const { db } = await import('./db');
+      const { default: path } = await import('path');
+      
+      await migrate(db, { 
+        migrationsFolder: path.resolve(process.cwd(), 'migrations')
+      });
+      
+      logger.info('Database migrations completed successfully');
+    } catch (error) {
+      logger.error('Database migration failed:', error);
+      // Don't exit, let the health check fail if DB is not ready
+    }
+  }
+}
+
 const app = express();
 
 // Production security middleware
@@ -40,6 +61,9 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
+    // Run migrations before starting the server
+    await runMigrationsIfNeeded();
+    
     const server = await registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
