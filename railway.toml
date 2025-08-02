@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-preDeploy = "npm run db:push"
+preDeploy = "node scripts/railway-drizzle.js"
 startCommand = "npm run start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
@@ -50,6 +50,12 @@ DATA_RETENTION_DAYS = { default = "730" }
 ENABLE_COMPRESSION = { default = "true" }
 CACHE_MAX_AGE = { default = "86400" }
 CDN_CACHE_CONTROL = { default = "public, max-age=31536000, immutable" }
+
+# Esbuild Configuration for Drizzle-kit Compatibility
+ESBUILD_SERVICE = { default = "false" }
+ESBUILD_DISABLE_SERVICE = { default = "true" }
+FORCE_COLOR = { default = "0" }
+NO_COLOR = { default = "1" }
 
 # Rate Limiting for Analytics Endpoints
 ANALYTICS_RATE_LIMIT_REQUESTS = { default = "1000" }

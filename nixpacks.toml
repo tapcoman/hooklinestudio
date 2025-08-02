@@ -7,20 +7,29 @@ cmds = [
   # Clear npm cache and install with optimizations
   "npm cache clean --force",
   "npm ci --cache /tmp/.npm --omit=dev --include=optional --no-fund --no-audit --prefer-offline",
+  # Kill any existing esbuild services to prevent version mismatches
+  "pkill -f 'esbuild.*service' || true",
   # Ensure correct esbuild binary for Linux x64
   "npm rebuild esbuild --platform=linux --arch=x64 || true",
   # Verify critical conversion component dependencies
   "npm list react react-dom @tanstack/react-query || true",
   "npm list @types/react @types/react-dom typescript || true",
-  # Verify esbuild installation
-  "npm list esbuild @esbuild/linux-x64 || true"
+  # Verify esbuild installation and force consistency
+  "npm list esbuild @esbuild/linux-x64 || true",
+  # Make our railway scripts executable
+  "chmod +x scripts/railway-esbuild.js",
+  "chmod +x scripts/railway-drizzle.js"
 ]
 
 [phases.build]
 cmds = [
   # Pre-build optimizations for TypeScript conversion components
   "echo 'Building optimized conversion components...'",
-  # Verify esbuild binary works
+  # Kill any esbuild services from previous operations
+  "pkill -f 'esbuild.*service' || true",
+  # Wait a moment for services to fully terminate
+  "sleep 1",
+  # Verify esbuild binary works with correct version
   "npx esbuild --version || echo 'esbuild version check failed'",
   # Run TypeScript type checking in parallel
   "npm run check &",
@@ -62,6 +71,12 @@ ESBUILD_MINIFY = "true"
 ESBUILD_SOURCEMAP = "false"
 ESBUILD_TARGET = "node18"
 ESBUILD_BINARY_PATH = "/app/node_modules/@esbuild/linux-x64/bin/esbuild"
+# Prevent esbuild service conflicts
+ESBUILD_SERVICE = "false"
+ESBUILD_DISABLE_SERVICE = "true"
+# Force esbuild to use binary instead of service
+FORCE_COLOR = "0"
+NO_COLOR = "1"
 
 # Build performance monitoring
 MEASURE_BUILD_TIME = "true"
