@@ -2,13 +2,12 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "npm run railway:start"
+preDeploy = "npm run db:push"
+startCommand = "npm run start"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-
-# Migration will now run on server startup with proper Railway connectivity handling
 
 [env]
 NODE_ENV = "production"
