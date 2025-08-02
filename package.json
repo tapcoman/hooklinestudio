@@ -17,6 +17,7 @@
     "railway:build": "npm run prebuild:railway && npm run build",
     "prebuild:railway": "npm list @rollup/rollup-linux-x64-gnu || npm install @rollup/rollup-linux-x64-gnu@^4.24.0 --no-save",
     "railway:migrate": "npm run db:push",
+    "railway:start": "NODE_ENV=production node dist/index.js",
     "health": "curl -f http://localhost:${PORT:-5000}/health || exit 1"
   },
   "dependencies": {

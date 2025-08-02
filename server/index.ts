@@ -77,7 +77,7 @@ app.use((req, res, next) => {
     // For Railway deployments, add a small startup delay to ensure database connections are ready
     if (env.RAILWAY_ENVIRONMENT) {
       logger.info('Railway environment detected, adding startup delay...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
     
     const httpServer = server.listen({

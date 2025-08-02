@@ -23,4 +23,4 @@ NPM_CONFIG_TARGET_LIBC = "glibc"
 NODE_ENV = "production"
 
 [start]
-cmd = "npm run railway:start"
+cmd = "npm start"

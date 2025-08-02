@@ -111,13 +111,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Liveness probe for Railway - simple endpoint that always responds
   // This is used by Railway for health checks and should never fail
   app.get('/live', (req, res) => {
-    res.status(200).json({
+    const response = {
       status: 'alive',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       environment: process.env.NODE_ENV || 'development',
-      railway: process.env.RAILWAY_ENVIRONMENT || 'local'
-    });
+      railway: process.env.RAILWAY_ENVIRONMENT || 'local',
+      port: process.env.PORT || '5000',
+      host: req.get('host'),
+      userAgent: req.get('user-agent')
+    };
+    
+    // Log health check requests in Railway environment for debugging
+    if (process.env.RAILWAY_ENVIRONMENT) {
+      console.log('Health check request received:', {
+        ip: req.ip,
+        host: req.get('host'),
+        userAgent: req.get('user-agent'),
+        uptime: process.uptime()
+      });
+    }
+    
+    res.status(200).json(response);
   });
   
   // Firebase Auth middleware will be applied to specific routes that need it
