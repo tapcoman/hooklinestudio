@@ -40,6 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/', apiLimiter);
   
   // Health check endpoint for Railway deployment monitoring
+  // Returns 200 even if database is temporarily unavailable to prevent restart loops
   app.get('/health', async (req, res) => {
     const startTime = Date.now();
     const healthCheck = {
@@ -64,13 +65,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     try {
-      // Test database connection
-      await storage.healthCheck();
+      // Test database connection with timeout
+      const dbCheckPromise = storage.healthCheck();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database health check timeout')), 5000)
+      );
+      
+      await Promise.race([dbCheckPromise, timeoutPromise]);
       healthCheck.services.database = 'connected';
     } catch (error) {
       console.error('Database health check failed:', error);
       healthCheck.services.database = 'disconnected';
-      healthCheck.status = 'unhealthy';
+      // Don't mark as unhealthy to prevent restart loops during database connectivity issues
+      // healthCheck.status = 'unhealthy';
     }
 
     const responseTime = Date.now() - startTime;
@@ -79,8 +86,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       responseTime: `${responseTime}ms`
     };
 
-    const statusCode = healthCheck.status === 'healthy' ? 200 : 503;
-    res.status(statusCode).json(healthCheck);
+    // Always return 200 for Railway health checks to prevent restart loops
+    // Use /ready endpoint for strict health checking
+    res.status(200).json(healthCheck);
   });
 
   // Readiness probe for Railway
@@ -100,12 +108,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Liveness probe for Railway
+  // Liveness probe for Railway - simple endpoint that always responds
+  // This is used by Railway for health checks and should never fail
   app.get('/live', (req, res) => {
     res.status(200).json({
       status: 'alive',
       timestamp: new Date().toISOString(),
-      uptime: process.uptime()
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      railway: process.env.RAILWAY_ENVIRONMENT || 'local'
     });
   });
   

@@ -41,18 +41,22 @@ const isRailwayInternalUrl = process.env.DATABASE_URL?.includes('railway.interna
 
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: process.env.NODE_ENV === 'production' ? 30 : 20, // More connections in production
-  min: isRailwayEnvironment ? 1 : 5, // Fewer minimum connections for Railway
-  idleTimeoutMillis: 60000, // Close idle clients after 60 seconds (increased for better connection reuse)
-  connectionTimeoutMillis: isRailwayInternalUrl ? 10000 : 3000, // Longer timeout for Railway internal URLs
-  statementTimeout: 30000, // Cancel queries after 30 seconds
-  query_timeout: 30000, // Query timeout
-  acquireTimeoutMillis: isRailwayInternalUrl ? 120000 : 60000, // Longer acquire timeout for Railway
-  createTimeoutMillis: isRailwayInternalUrl ? 10000 : 3000, // Longer create timeout for Railway
-  destroyTimeoutMillis: 5000, // How long to wait when destroying a client
-  reapIntervalMillis: 1000, // How often to check for idle clients to destroy
-  createRetryIntervalMillis: isRailwayInternalUrl ? 1000 : 200, // Slower retries for Railway
-  propagateCreateError: false // Don't crash if initial connection fails
+  max: process.env.NODE_ENV === 'production' ? 20 : 15, // Reduced max connections for Railway stability
+  min: isRailwayEnvironment ? 0 : 2, // No minimum connections for Railway to reduce connection pressure
+  idleTimeoutMillis: isRailwayEnvironment ? 30000 : 60000, // Shorter idle timeout for Railway
+  connectionTimeoutMillis: isRailwayInternalUrl ? 15000 : 5000, // Longer timeout for Railway internal URLs
+  statementTimeout: 20000, // Shorter statement timeout
+  query_timeout: 20000, // Shorter query timeout
+  acquireTimeoutMillis: isRailwayInternalUrl ? 30000 : 10000, // Railway-optimized acquire timeout
+  createTimeoutMillis: isRailwayInternalUrl ? 15000 : 5000, // Railway-optimized create timeout
+  destroyTimeoutMillis: 3000, // Faster destroy timeout
+  reapIntervalMillis: 2000, // More frequent cleanup for Railway
+  createRetryIntervalMillis: isRailwayInternalUrl ? 2000 : 500, // Slower retries for Railway
+  propagateCreateError: false, // Don't crash if initial connection fails
+  // Railway-specific optimizations
+  allowExitOnIdle: isRailwayEnvironment, // Allow process to exit when all clients are idle
+  maxUses: isRailwayEnvironment ? 7500 : 10000, // Rotate connections more frequently on Railway
+  application_name: `hooklinestudio-${process.env.RAILWAY_ENVIRONMENT || 'local'}`
 });
 
 export const db = drizzle({ client: pool, schema });

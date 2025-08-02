@@ -4,6 +4,7 @@ import { setupVite, serveStatic } from "./vite";
 import { productionSecurityHeaders, forceHTTPS } from "./middleware/security-headers";
 import { validateEnvironment, isProduction, getEnv } from "./config/env-validation";
 import { logger } from "./config/logger";
+import { pool } from "./db";
 import history from "connect-history-api-fallback";
 
 // Validate environment variables before starting server
@@ -72,6 +73,13 @@ app.use((req, res, next) => {
     // It is the only port that is not firewalled.
     const env = getEnv();
     const port = env.PORT;
+    
+    // For Railway deployments, add a small startup delay to ensure database connections are ready
+    if (env.RAILWAY_ENVIRONMENT) {
+      logger.info('Railway environment detected, adding startup delay...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
     const httpServer = server.listen({
       port,
       host: "0.0.0.0",
@@ -81,11 +89,12 @@ app.use((req, res, next) => {
         port,
         environment: env.NODE_ENV,
         railway: env.RAILWAY_ENVIRONMENT || "local",
-        healthCheck: "/health"
+        healthCheck: "/live",
+        readinessCheck: "/ready"
       });
     });
 
-    // Graceful shutdown handling for production
+    // Graceful shutdown handling for production and Railway deployments
     const gracefulShutdown = (signal: string) => {
       logger.warn(`Received ${signal}. Starting graceful shutdown...`);
       
@@ -96,14 +105,27 @@ app.use((req, res, next) => {
         }
         
         logger.info("Server closed successfully");
-        process.exit(0);
+        
+        // Close database connections
+        if (typeof pool?.end === 'function') {
+          pool.end().then(() => {
+            logger.info("Database connections closed");
+            process.exit(0);
+          }).catch((error) => {
+            logger.error("Error closing database connections", error);
+            process.exit(1);
+          });
+        } else {
+          process.exit(0);
+        }
       });
 
-      // Force shutdown after 30 seconds
+      // Railway gives us 30 seconds for graceful shutdown, so force shutdown after 25 seconds
+      const shutdownTimeout = env.RAILWAY_ENVIRONMENT ? 25000 : 30000;
       setTimeout(() => {
-        logger.error("Forced shutdown after 30 seconds");
+        logger.error(`Forced shutdown after ${shutdownTimeout / 1000} seconds`);
         process.exit(1);
-      }, 30000);
+      }, shutdownTimeout);
     };
 
     // Listen for shutdown signals

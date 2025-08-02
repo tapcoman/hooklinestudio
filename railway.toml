@@ -4,8 +4,9 @@ builder = "nixpacks"
 [deploy]
 preDeploy = "npm run db:push"
 startCommand = "npm run start"
-healthcheckPath = "/health"
-healthcheckTimeout = 300
+healthcheckPath = "/live"
+healthcheckTimeout = 60
+healthcheckInterval = 30
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
 
