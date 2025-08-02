@@ -11,7 +11,7 @@
     "start": "NODE_ENV=production node dist/index.js",
     "start:dev": "NODE_ENV=development tsx server/index.ts",
     "check": "tsc --noEmit",
-    "db:push": "drizzle-kit push",
+    "db:push": "node scripts/railway-drizzle.js",
     "db:migrate": "tsx server/scripts/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "railway:build": "npm run prebuild:railway && npm run build",
