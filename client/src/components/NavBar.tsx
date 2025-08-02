@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'wouter';
 import { Container } from './Container';
 import { useFirebaseAuth } from '@/hooks/use-firebase-auth';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { Menu, X } from 'lucide-react';
-// Logo from public directory
-const logoUrl = "/assets/logo.png";
+import { Menu, X, Sparkles } from 'lucide-react';
+
+// Constants
+const LOGO_URL = "/assets/logo.png";
+const SCROLL_THRESHOLD = 10;
+const SCROLL_DEBOUNCE_MS = 10;
 
 interface NavBarProps {
   onShowModal?: () => void;
@@ -19,14 +22,25 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
   const { user } = useFirebaseAuth();
   const isAuthenticated = !!user;
 
+  // Debounced scroll handler for better performance
+  const handleScroll = useCallback(() => {
+    const scrolled = window.scrollY > SCROLL_THRESHOLD;
+    setIsScrolled(prev => prev !== scrolled ? scrolled : prev);
+  }, []);
+
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const debouncedHandleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleScroll, SCROLL_DEBOUNCE_MS);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('scroll', debouncedHandleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', debouncedHandleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [handleScroll]);
 
   const handleMobileNavigation = (action: () => void) => {
     action();
@@ -56,32 +70,42 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
       
       <nav 
         id="navigation"
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
           isScrolled 
-            ? 'bg-background/95 backdrop-blur-md shadow-editorial h-14 border-b border-line/50' 
-            : 'bg-transparent h-16'
+            ? 'bg-white/95 backdrop-blur-xl shadow-lg border-b border-slate-200/50 py-3' 
+            : 'bg-transparent py-4'
         }`}
         role="navigation"
         aria-label="Main navigation"
       >
       <Container>
-        <div className="flex items-center justify-between h-full">
+        <div className="flex items-center justify-between">
           {/* Logo */}
           <Link 
             href="/" 
-            className="group flex-shrink-0 focus-visible touch-target"
+            className="group flex items-center gap-3 focus-visible touch-target"
             aria-label="Hook Line Studio - Go to homepage"
           >
-            <img 
-              src={logoUrl} 
-              alt="Hook Line Studio - Your AI-powered hook generator" 
-              className="w-12 h-12 lg:w-16 lg:h-16 object-contain group-hover:opacity-80 transition-opacity"
-              role="img"
-            />
+            <div className="relative">
+              <img 
+                src={LOGO_URL} 
+                alt="Hook Line Studio" 
+                className="w-10 h-10 lg:w-12 lg:h-12 object-contain transition-all duration-300 group-hover:scale-105"
+                role="img"
+                loading="eager"
+                decoding="async"
+              />
+              <div className="absolute -inset-1 bg-gradient-to-r from-brass/20 to-navy/20 rounded-full blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </div>
+            <div className="hidden sm:block">
+              <span className="font-heading font-bold text-xl text-navy group-hover:text-brass transition-colors duration-300">
+                Hook Line Studio
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden lg:flex items-center space-x-6 xl:space-x-8" role="menubar" aria-label="Main menu">
+          <div className="hidden lg:flex items-center gap-8" role="menubar" aria-label="Main menu">
             <button 
               onClick={() => scrollToSection('how-it-works')}
               onKeyDown={(e) => {
@@ -90,91 +114,88 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                   scrollToSection('how-it-works');
                 }
               }}
-              className={`text-sm xl:text-base text-navy hover:text-brass transition-colors relative group focus-visible rounded-sm px-2 py-1 touch-target ${
-                location === '/' ? 'font-medium' : ''
+              className={`relative text-base font-medium text-slate-700 hover:text-navy transition-all duration-300 px-3 py-2 rounded-lg hover:bg-slate-50 group ${
+                location === '/' ? 'text-navy' : ''
               }`}
               aria-label="Learn how Hook Line Studio works"
               role="menuitem"
             >
               How it works
-              {location === '/' && (
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-brass" aria-hidden="true"></span>
-              )}
-              <span className="sr-only">{location === '/' ? ' - current page' : ''}</span>
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-brass to-navy transition-all duration-300 group-hover:w-full group-hover:left-0" aria-hidden="true"></span>
             </button>
             <Link 
               href="/pricing"
-              className={`text-sm xl:text-base text-navy hover:text-brass transition-colors relative group focus-visible rounded-sm px-2 py-1 touch-target ${
-                location === '/pricing' ? 'font-medium' : ''
+              className={`relative text-base font-medium text-slate-700 hover:text-navy transition-all duration-300 px-3 py-2 rounded-lg hover:bg-slate-50 group ${
+                location === '/pricing' ? 'text-navy bg-slate-50' : ''
               }`}
               aria-label="View pricing plans"
               role="menuitem"
             >
               Pricing
+              <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-brass to-navy transition-all duration-300 group-hover:w-full group-hover:left-0" aria-hidden="true"></span>
               {location === '/pricing' && (
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-brass" aria-hidden="true"></span>
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-brass to-navy" aria-hidden="true"></span>
               )}
-              <span className="sr-only">{location === '/pricing' ? ' - current page' : ''}</span>
             </Link>
             {isAuthenticated && (
               <Link 
                 href="/app"
-                className={`text-sm xl:text-base text-navy hover:text-brass transition-colors relative group focus-visible rounded-sm px-2 py-1 touch-target ${
-                  location === '/app' ? 'font-medium' : ''
+                className={`relative text-base font-medium text-slate-700 hover:text-navy transition-all duration-300 px-3 py-2 rounded-lg hover:bg-slate-50 group ${
+                  location === '/app' ? 'text-navy bg-slate-50' : ''
                 }`}
                 aria-label="Go to hook creation app"
                 role="menuitem"
               >
                 Create Hooks
+                <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-brass to-navy transition-all duration-300 group-hover:w-full group-hover:left-0" aria-hidden="true"></span>
                 {location === '/app' && (
-                  <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-brass" aria-hidden="true"></span>
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-brass to-navy" aria-hidden="true"></span>
                 )}
-                <span className="sr-only">{location === '/app' ? ' - current page' : ''}</span>
               </Link>
             )}
           </div>
 
           {/* Desktop CTA Buttons - Only show for non-authenticated users */}
           {!isAuthenticated && (
-            <div className="hidden lg:flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
+            <div className="hidden lg:flex items-center gap-4">
               {/* Login Button for existing users */}
               <Button 
                 variant="outline"
                 size="sm"
-                className="border-navy text-navy hover:bg-navy/5 rounded-button focus-visible px-3 py-1.5 touch-target"
+                className="border-slate-300 text-slate-700 hover:border-navy hover:text-navy hover:bg-slate-50 rounded-xl font-medium px-5 py-2.5 transition-all duration-300"
                 onClick={() => window.location.href = '/auth'}
                 aria-label="Log in to your existing account"
               >
-                <span className="text-sm font-medium">Log In</span>
+                Log In
               </Button>
               
               {/* Primary CTA Button */}
               <Button 
                 size="sm"
-                className="bg-navy hover:bg-navy/90 text-white rounded-button focus-visible relative overflow-hidden group px-3 py-1.5 lg:px-4 lg:py-2 touch-target"
+                className="bg-gradient-to-r from-navy to-navy/90 hover:from-navy hover:to-navy text-white rounded-xl font-semibold px-6 py-2.5 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group"
                 onClick={() => window.location.href = '/onboarding'}
                 aria-label="Try Hook Line Studio for free - no credit card required"
               >
-                <span className="relative z-10 flex items-center text-sm font-medium whitespace-nowrap">
+                <span className="relative z-10 flex items-center gap-2">
                   Try Free
-                  <div className="ml-1 lg:ml-2 w-2 h-2 bg-brass rounded-full animate-pulse" aria-hidden="true"></div>
+                  <Sparkles className="w-4 h-4 text-brass" aria-hidden="true" />
                 </span>
-                <div className="absolute inset-0 bg-brass transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" aria-hidden="true"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-brass to-brass/90 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" aria-hidden="true"></div>
               </Button>
             </div>
           )}
 
           {/* Mobile Navigation */}
-          <div className="lg:hidden flex items-center space-x-2">
+          <div className="lg:hidden flex items-center gap-3">
             {/* Mobile CTA - Show for non-authenticated users */}
             {!isAuthenticated && (
               <Button 
                 size="sm"
-                className="bg-navy hover:bg-navy/90 text-white rounded-button focus-visible px-3 py-1.5 touch-target"
+                className="bg-gradient-to-r from-navy to-navy/90 text-white rounded-xl font-semibold px-4 py-2 shadow-md hover:shadow-lg transition-all duration-300"
                 onClick={() => window.location.href = '/onboarding'}
                 aria-label="Try Hook Line Studio for free - no credit card required"
               >
-                <span className="text-sm font-medium">Try Free</span>
+                Try Free
               </Button>
             )}
             
@@ -184,7 +205,7 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-navy text-navy hover:bg-navy/5 focus-visible p-2 touch-target"
+                  className="border-slate-300 text-slate-700 hover:border-navy hover:text-navy hover:bg-slate-50 rounded-xl p-2.5 transition-all duration-300"
                   aria-label="Open navigation menu"
                   aria-expanded={isMobileMenuOpen}
                   aria-controls="mobile-menu"
@@ -192,20 +213,27 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                   <Menu className="h-5 w-5" aria-hidden="true" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[300px]" id="mobile-menu" aria-label="Mobile navigation menu">
+              <SheetContent side="right" className="w-[320px] bg-white/95 backdrop-blur-xl border-l border-slate-200" id="mobile-menu" aria-label="Mobile navigation menu">
                 <div className="flex flex-col h-full">
                   {/* Mobile Menu Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <img 
-                      src={logoUrl} 
-                      alt="Hook Line Studio Logo" 
-                      className="w-10 h-10 object-contain"
-                    />
+                  <div className="flex items-center justify-between mb-8 pt-4">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={LOGO_URL} 
+                        alt="Hook Line Studio Logo" 
+                        className="w-10 h-10 object-contain"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <span className="font-heading font-bold text-lg text-navy">
+                        Hook Line Studio
+                      </span>
+                    </div>
                     <SheetClose asChild>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="p-2 touch-target focus-visible"
+                        className="border-slate-300 text-slate-700 hover:border-navy hover:text-navy rounded-xl p-2.5"
                         aria-label="Close navigation menu"
                       >
                         <X className="h-4 w-4" aria-hidden="true" />
@@ -214,7 +242,7 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                   </div>
 
                   {/* Mobile Navigation Links */}
-                  <nav className="flex flex-col space-y-4 mb-8" role="menu" aria-label="Mobile navigation menu">
+                  <nav className="flex flex-col gap-2 mb-8" role="menu" aria-label="Mobile navigation menu">
                     <button 
                       onClick={() => handleMobileNavigation(() => scrollToSection('how-it-works'))}
                       onKeyDown={(e) => {
@@ -223,7 +251,7 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                           handleMobileNavigation(() => scrollToSection('how-it-works'));
                         }
                       }}
-                      className="text-left text-lg text-navy hover:text-brass transition-colors focus-visible rounded-sm p-2 touch-target"
+                      className="text-left text-lg font-medium text-slate-700 hover:text-navy hover:bg-slate-50 transition-all duration-300 rounded-xl px-4 py-3"
                       aria-label="Learn how Hook Line Studio works"
                       role="menuitem"
                     >
@@ -232,7 +260,7 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                     <Link 
                       href="/pricing"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="text-lg text-navy hover:text-brass transition-colors focus-visible rounded-sm p-2 touch-target block"
+                      className="text-lg font-medium text-slate-700 hover:text-navy hover:bg-slate-50 transition-all duration-300 rounded-xl px-4 py-3 block"
                       aria-label="View pricing plans"
                       role="menuitem"
                     >
@@ -242,7 +270,7 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                       <Link 
                         href="/app"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="text-lg text-navy hover:text-brass transition-colors focus-visible rounded-sm p-2 touch-target block"
+                        className="text-lg font-medium text-slate-700 hover:text-navy hover:bg-slate-50 transition-all duration-300 rounded-xl px-4 py-3 block"
                         aria-label="Go to hook creation app"
                         role="menuitem"
                       >
@@ -253,7 +281,7 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                       <Link 
                         href="/auth"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="text-lg text-navy hover:text-brass transition-colors focus-visible rounded-sm p-2 touch-target block"
+                        className="text-lg font-medium text-slate-700 hover:text-navy hover:bg-slate-50 transition-all duration-300 rounded-xl px-4 py-3 block"
                         aria-label="Log in to your existing account"
                         role="menuitem"
                       >
@@ -261,6 +289,24 @@ export function NavBar({ onShowModal }: NavBarProps = {}) {
                       </Link>
                     )}
                   </nav>
+                  
+                  {/* Mobile Menu Footer */}
+                  <div className="mt-auto mb-6">
+                    <div className="bg-gradient-to-r from-navy/5 to-brass/5 rounded-xl p-4">
+                      <p className="text-sm text-slate-600 mb-3">
+                        Ready to create engaging hooks?
+                      </p>
+                      <Button 
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          window.location.href = '/onboarding';
+                        }}
+                        className="w-full bg-gradient-to-r from-navy to-navy/90 text-white rounded-xl font-semibold py-3"
+                      >
+                        Get Started Free
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

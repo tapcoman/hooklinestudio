@@ -22,7 +22,7 @@ export function Metric({ icon: Icon, value, label, numericValue }: MetricProps) 
         <Icon className="w-8 h-8 text-brass" strokeWidth={1.75} />
       </div>
       <h3 
-        ref={ref}
+        ref={ref as any}
         className="text-h2 font-heading font-bold text-navy mb-2"
       >
         {displayValue}

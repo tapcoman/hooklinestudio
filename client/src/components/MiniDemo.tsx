@@ -199,7 +199,7 @@ export function MiniDemo() {
     } catch (error) {
       console.error("Demo generation failed:", error);
       announceToScreenReader('Hook generation failed. Please try again.');
-      analytics.track('demo_error', { topic: demoTopic, platform: demoPlatform, error: error.message });
+      analytics.track('demo_error', { topic: demoTopic, platform: demoPlatform, error: String(error) });
     } finally {
       setIsGenerating(false);
     }

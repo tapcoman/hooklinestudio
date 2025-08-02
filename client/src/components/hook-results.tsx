@@ -359,7 +359,7 @@ function HookResults({ generation, userId }: HookResultsProps) {
 
   const canonicalHooks = useMemo<CanonicalHook[]>(() => {
     if (!generation?.hooks || !Array.isArray(generation.hooks)) return [];
-    return generation.hooks.map((raw: HookOld | HookNew) => normalizeHook(raw, platform));
+    return generation.hooks.map((raw: any) => normalizeHook(raw, platform));
   }, [generation.hooks, platform]);
 
   const hooksWithComposite = useMemo(() => {
