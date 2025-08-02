@@ -366,9 +366,10 @@ export default function App() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </nav>
               </div>
             </div>
-          </div>
+          </header>
         )}
 
         {/* Mobile Sidebar */}
@@ -521,7 +522,7 @@ export default function App() {
                   </>
                 )}
               </div>
-            </div>
+            </aside>
           )}
 
           {/* Results Panel - Mobile/Desktop responsive */}
@@ -722,8 +723,8 @@ export default function App() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
+          </section>
+        </main>
 
         {/* Mobile Bottom Bar */}
         {isMobile && (
