@@ -6,7 +6,7 @@
  */
 
 import { spawn, execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 const LINUX_X64_ESBUILD = join(process.cwd(), 'node_modules/@esbuild/linux-x64/bin/esbuild');
@@ -64,52 +64,56 @@ function validateEnvironment() {
   
   console.log('✅ Drizzle config found');
   
-  // Check drizzle versions
+  // FORCE CORRECT DRIZZLE VERSIONS - AGGRESSIVE APPROACH
+  console.log('🔄 FORCING correct drizzle versions before any checks...');
   try {
-    console.log('Checking drizzle versions...');
+    execSync('npm install drizzle-orm@^0.44.4 drizzle-kit@^0.31.4 --no-save --force', { 
+      stdio: 'inherit',
+      timeout: 60000 
+    });
+    console.log('✅ Forced drizzle packages to correct versions');
+  } catch (forceError) {
+    console.log('⚠️  Force install failed, continuing anyway:', forceError.message);
+  }
+
+  // Check drizzle versions (after forced install)
+  try {
+    console.log('Checking drizzle versions after force install...');
     const packageJsonPath = join(process.cwd(), 'package.json');
     if (existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(require('fs').readFileSync(packageJsonPath, 'utf8'));
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
       console.log(`📦 package.json drizzle-orm: ${packageJson.dependencies?.['drizzle-orm'] || 'NOT FOUND'}`);
       console.log(`📦 package.json drizzle-kit: ${packageJson.devDependencies?.['drizzle-kit'] || 'NOT FOUND'}`);
     }
     
-    // Check installed versions
+    // Check installed versions  
     const drizzleOrmPath = join(process.cwd(), 'node_modules/drizzle-orm/package.json');
     const drizzleKitPath = join(process.cwd(), 'node_modules/drizzle-kit/package.json');
     
     if (existsSync(drizzleOrmPath)) {
-      const drizzleOrmPkg = JSON.parse(require('fs').readFileSync(drizzleOrmPath, 'utf8'));
+      const drizzleOrmPkg = JSON.parse(readFileSync(drizzleOrmPath, 'utf8'));
       console.log(`🔍 Installed drizzle-orm: ${drizzleOrmPkg.version}`);
+      
+      // If STILL wrong version, fail fast
+      if (drizzleOrmPkg.version.startsWith('0.39')) {
+        throw new Error(`CRITICAL: drizzle-orm is still at incompatible version ${drizzleOrmPkg.version}. Need 0.44.x or higher.`);
+      }
     } else {
       console.log('❌ drizzle-orm not found in node_modules');
     }
     
     if (existsSync(drizzleKitPath)) {
-      const drizzleKitPkg = JSON.parse(require('fs').readFileSync(drizzleKitPath, 'utf8'));
+      const drizzleKitPkg = JSON.parse(readFileSync(drizzleKitPath, 'utf8'));
       console.log(`🔍 Installed drizzle-kit: ${drizzleKitPkg.version}`);
-      
-      // Check if we have the old incompatible version
-      const drizzleOrmPkg = existsSync(drizzleOrmPath) ? 
-        JSON.parse(require('fs').readFileSync(drizzleOrmPath, 'utf8')) : null;
-      
-      if (drizzleOrmPkg && drizzleOrmPkg.version.startsWith('0.39')) {
-        console.log('❌ Detected incompatible drizzle-orm version 0.39.x');
-        console.log('🔄 Attempting to reinstall latest drizzle packages...');
-        
-        try {
-          execSync('npm install drizzle-orm@^0.44.4 drizzle-kit@^0.31.4 --no-save', { stdio: 'inherit' });
-          console.log('✅ Drizzle packages reinstalled');
-        } catch (reinstallError) {
-          console.log('⚠️  Could not reinstall drizzle packages:', reinstallError.message);
-        }
-      }
     } else {
       console.log('❌ drizzle-kit not found in node_modules');
     }
     
   } catch (error) {
     console.log('⚠️  Could not read drizzle versions:', error.message);
+    if (error.message.includes('CRITICAL:')) {
+      throw error; // Re-throw critical errors
+    }
   }
 }
 
