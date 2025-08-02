@@ -16,6 +16,10 @@ cmds = [
   "npm list @types/react @types/react-dom typescript || true",
   # Verify esbuild installation and force consistency
   "npm list esbuild @esbuild/linux-x64 || true",
+  # Force install correct drizzle versions to prevent version mismatch
+  "npm install drizzle-orm@^0.44.4 drizzle-kit@^0.31.4 --no-save || true",
+  # Verify drizzle versions are correct
+  "npm list drizzle-orm drizzle-kit || true",
   # Make our railway scripts executable
   "chmod +x scripts/railway-esbuild.js",
   "chmod +x scripts/railway-drizzle.js"

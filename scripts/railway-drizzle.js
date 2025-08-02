@@ -63,6 +63,54 @@ function validateEnvironment() {
   }
   
   console.log('✅ Drizzle config found');
+  
+  // Check drizzle versions
+  try {
+    console.log('Checking drizzle versions...');
+    const packageJsonPath = join(process.cwd(), 'package.json');
+    if (existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(require('fs').readFileSync(packageJsonPath, 'utf8'));
+      console.log(`📦 package.json drizzle-orm: ${packageJson.dependencies?.['drizzle-orm'] || 'NOT FOUND'}`);
+      console.log(`📦 package.json drizzle-kit: ${packageJson.devDependencies?.['drizzle-kit'] || 'NOT FOUND'}`);
+    }
+    
+    // Check installed versions
+    const drizzleOrmPath = join(process.cwd(), 'node_modules/drizzle-orm/package.json');
+    const drizzleKitPath = join(process.cwd(), 'node_modules/drizzle-kit/package.json');
+    
+    if (existsSync(drizzleOrmPath)) {
+      const drizzleOrmPkg = JSON.parse(require('fs').readFileSync(drizzleOrmPath, 'utf8'));
+      console.log(`🔍 Installed drizzle-orm: ${drizzleOrmPkg.version}`);
+    } else {
+      console.log('❌ drizzle-orm not found in node_modules');
+    }
+    
+    if (existsSync(drizzleKitPath)) {
+      const drizzleKitPkg = JSON.parse(require('fs').readFileSync(drizzleKitPath, 'utf8'));
+      console.log(`🔍 Installed drizzle-kit: ${drizzleKitPkg.version}`);
+      
+      // Check if we have the old incompatible version
+      const drizzleOrmPkg = existsSync(drizzleOrmPath) ? 
+        JSON.parse(require('fs').readFileSync(drizzleOrmPath, 'utf8')) : null;
+      
+      if (drizzleOrmPkg && drizzleOrmPkg.version.startsWith('0.39')) {
+        console.log('❌ Detected incompatible drizzle-orm version 0.39.x');
+        console.log('🔄 Attempting to reinstall latest drizzle packages...');
+        
+        try {
+          execSync('npm install drizzle-orm@^0.44.4 drizzle-kit@^0.31.4 --no-save', { stdio: 'inherit' });
+          console.log('✅ Drizzle packages reinstalled');
+        } catch (reinstallError) {
+          console.log('⚠️  Could not reinstall drizzle packages:', reinstallError.message);
+        }
+      }
+    } else {
+      console.log('❌ drizzle-kit not found in node_modules');
+    }
+    
+  } catch (error) {
+    console.log('⚠️  Could not read drizzle versions:', error.message);
+  }
 }
 
 function runDrizzleKit() {
