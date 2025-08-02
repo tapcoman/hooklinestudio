@@ -16,6 +16,7 @@
     "db:generate": "drizzle-kit generate",
     "railway:build": "npm run prebuild:railway && npm run build",
     "prebuild:railway": "npm list @rollup/rollup-linux-x64-gnu || npm install @rollup/rollup-linux-x64-gnu@^4.24.0 --no-save",
+    "railway:migrate": "NODE_ENV=production tsx server/scripts/migrate.ts",
     "railway:start": "NODE_ENV=production node dist/index.js",
     "health": "curl -f http://localhost:${PORT:-5000}/health || exit 1"
   },
