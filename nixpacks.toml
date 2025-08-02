@@ -7,15 +7,21 @@ cmds = [
   # Clear npm cache and install with optimizations
   "npm cache clean --force",
   "npm ci --cache /tmp/.npm --omit=dev --include=optional --no-fund --no-audit --prefer-offline",
+  # Ensure correct esbuild binary for Linux x64
+  "npm rebuild esbuild --platform=linux --arch=x64 || true",
   # Verify critical conversion component dependencies
   "npm list react react-dom @tanstack/react-query || true",
-  "npm list @types/react @types/react-dom typescript || true"
+  "npm list @types/react @types/react-dom typescript || true",
+  # Verify esbuild installation
+  "npm list esbuild @esbuild/linux-x64 || true"
 ]
 
 [phases.build]
 cmds = [
   # Pre-build optimizations for TypeScript conversion components
   "echo 'Building optimized conversion components...'",
+  # Verify esbuild binary works
+  "npx esbuild --version || echo 'esbuild version check failed'",
   # Run TypeScript type checking in parallel
   "npm run check &",
   # Build client and server with optimization flags
@@ -35,9 +41,6 @@ NPM_CONFIG_UPDATE_NOTIFIER = "false"
 NPM_CONFIG_FUND = "false" 
 NPM_CONFIG_AUDIT = "false"
 NPM_CONFIG_PROGRESS = "false"
-NPM_CONFIG_TARGET_PLATFORM = "linux"
-NPM_CONFIG_TARGET_ARCH = "x64"
-NPM_CONFIG_TARGET_LIBC = "glibc"
 NPM_CONFIG_PREFER_OFFLINE = "true"
 
 # Node.js optimizations for TypeScript compilation
@@ -58,6 +61,7 @@ VITE_BUILD_ROLLUP_INLINE_DYNAMIC_IMPORTS = "false"
 ESBUILD_MINIFY = "true"
 ESBUILD_SOURCEMAP = "false"
 ESBUILD_TARGET = "node18"
+ESBUILD_BINARY_PATH = "/app/node_modules/@esbuild/linux-x64/bin/esbuild"
 
 # Build performance monitoring
 MEASURE_BUILD_TIME = "true"

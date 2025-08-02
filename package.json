@@ -7,7 +7,7 @@
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build --mode production",
-    "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --minify --sourcemap --define:process.env.NODE_ENV='\"production\"'",
+    "build:server": "node scripts/railway-esbuild.js server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --minify --sourcemap --define:process.env.NODE_ENV='\"production\"'",
     "start": "NODE_ENV=production node dist/index.js",
     "start:dev": "NODE_ENV=development tsx server/index.ts",
     "check": "tsc --noEmit",
@@ -15,7 +15,9 @@
     "db:migrate": "tsx server/scripts/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "railway:build": "npm run prebuild:railway && npm run build",
-    "prebuild:railway": "npm list @rollup/rollup-linux-x64-gnu || npm install @rollup/rollup-linux-x64-gnu@^4.24.0 --no-save",
+    "prebuild:railway": "npm run ensure:linux-deps && npm run verify:esbuild",
+    "ensure:linux-deps": "npm list @rollup/rollup-linux-x64-gnu || npm install @rollup/rollup-linux-x64-gnu@^4.24.0 --no-save",
+    "verify:esbuild": "npm list @esbuild/linux-x64 || npm install @esbuild/linux-x64@^0.25.0 --no-save",
     "railway:migrate": "npm run db:push",
     "railway:start": "NODE_ENV=production node dist/index.js",
     "health": "curl -f http://localhost:${PORT:-5000}/health || exit 1"
@@ -126,6 +128,7 @@
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.24.0",
+    "@esbuild/linux-x64": "^0.25.0",
     "bufferutil": "^4.0.8"
   }
 }
