@@ -7,14 +7,14 @@ export function productionSecurityHeaders(req: Request, res: Response, next: Nex
     // Strict Transport Security (HSTS) - Force HTTPS
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     
-    // Content Security Policy (CSP) - Enhanced for Stripe
+    // Content Security Policy (CSP) - Enhanced for Stripe and Firebase
     res.setHeader('Content-Security-Policy', [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://js.stripe.com https://maps.googleapis.com",
+      "script-src 'self' 'unsafe-inline' https://js.stripe.com https://maps.googleapis.com https://www.gstatic.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https:",
-      "connect-src 'self' https://api.stripe.com https://api.openai.com",
+      "connect-src 'self' https://api.stripe.com https://api.openai.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://hook-line-studio-default-rtdb.firebaseio.com https://firebaseinstallations.googleapis.com",
       "frame-src https://js.stripe.com https://hooks.stripe.com",
       "form-action 'self'",
       "base-uri 'self'",

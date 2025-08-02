@@ -36,35 +36,47 @@ const firebaseConfig = {
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 
-if (isBrowser && firebaseConfig.apiKey && firebaseConfig.appId) {
-  try {
-    app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    auth = getAuth(app);
+if (isBrowser) {
+  // Check for required environment variables
+  const hasApiKey = !!firebaseConfig.apiKey;
+  const hasAppId = !!firebaseConfig.appId;
+  
+  if (hasApiKey && hasAppId) {
+    try {
+      app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+      auth = getAuth(app);
 
-    // Persist sessions across tabs (default is local, but set explicitly)
-    setPersistence(auth, browserLocalPersistence).catch(() => { /* fall back */ });
-    // Localize emails/flows to device language
-    auth.useDeviceLanguage();
+      // Persist sessions across tabs (default is local, but set explicitly)
+      setPersistence(auth, browserLocalPersistence).catch(() => { /* fall back */ });
+      // Localize emails/flows to device language
+      auth.useDeviceLanguage();
 
-    // For local dev (optional):
-    // if (location.hostname === "localhost") {
-    //   connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
-    // }
+      // For local dev (optional):
+      // if (location.hostname === "localhost") {
+      //   connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
+      // }
 
-    // Safe logging (no secrets)
-    const opts = app.options || {};
-    console.log("[Firebase] init OK", {
-      projectId: opts.projectId,
-      authDomain: opts.authDomain,
-      appId: opts.appId ? "present" : "missing",
-      apiKey: firebaseConfig.apiKey ? "present" : "missing",
-      storageBucket: opts.storageBucket,
+      // Safe logging (no secrets)
+      const opts = app.options || {};
+      console.log("[Firebase] init OK", {
+        projectId: opts.projectId,
+        authDomain: opts.authDomain,
+        appId: opts.appId ? "present" : "missing",
+        apiKey: firebaseConfig.apiKey ? "present" : "missing",
+        storageBucket: opts.storageBucket,
+      });
+    } catch (e) {
+      console.error("[Firebase] initialization failed:", e);
+    }
+  } else {
+    console.warn("[Firebase] Skipped init - missing environment variables:", {
+      VITE_FIREBASE_API_KEY: hasApiKey ? "present" : "missing",
+      VITE_FIREBASE_APP_ID: hasAppId ? "present" : "missing",
+      hint: "Set these environment variables in your deployment platform (Railway) to enable Firebase authentication"
     });
-  } catch (e) {
-    console.error("[Firebase] initialization failed:", e);
   }
 } else {
-  console.warn("[Firebase] Skipped init (non-browser or missing env).");
+  console.warn("[Firebase] Skipped init (server-side rendering).");
 }
 
 export { auth };
