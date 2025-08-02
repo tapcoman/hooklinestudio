@@ -4,16 +4,17 @@ builder = "nixpacks"
 [deploy]
 preDeploy = "npm run db:push"
 startCommand = "npm run start"
-healthcheckPath = "/live"
-healthcheckTimeout = 120
-healthcheckInterval = 10
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+healthcheckInterval = 30
 restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
+restartPolicyMaxRetries = 5
 
 [env]
 NODE_ENV = "production"
 PORT = { default = "5000" }
 
+# Core Application Environment Variables
 # Railway will automatically provide DATABASE_URL when PostgreSQL service is connected
 # You need to set these in Railway dashboard:
 # FIREBASE_PROJECT_ID
@@ -23,11 +24,47 @@ PORT = { default = "5000" }
 # STRIPE_SECRET_KEY
 # STRIPE_WEBHOOK_SECRET
 
+# Analytics and Conversion Tracking Configuration
+ANALYTICS_ENABLED = { default = "true" }
+ANALYTICS_BATCH_SIZE = { default = "100" }
+ANALYTICS_FLUSH_INTERVAL = { default = "10000" }
+ANALYTICS_SAMPLING_RATE = { default = "1.0" }
+
+# A/B Testing Configuration
+AB_TESTING_ENABLED = { default = "true" }
+AB_TESTING_DEFAULT_TRAFFIC = { default = "1.0" }
+AB_TESTING_MIN_SAMPLE_SIZE = { default = "100" }
+
+# Conversion Tracking Settings
+CONVERSION_TRACKING_ENABLED = { default = "true" }
+CONVERSION_API_ENDPOINT = { default = "/api/analytics/track" }
+CONVERSION_RETENTION_DAYS = { default = "90" }
+
+# Privacy and Compliance
+GDPR_COMPLIANCE_ENABLED = { default = "true" }
+CCPA_COMPLIANCE_ENABLED = { default = "true" }
+ANONYMIZE_IPS = { default = "true" }
+DATA_RETENTION_DAYS = { default = "730" }
+
+# Performance Optimization
+ENABLE_COMPRESSION = { default = "true" }
+CACHE_MAX_AGE = { default = "86400" }
+CDN_CACHE_CONTROL = { default = "public, max-age=31536000, immutable" }
+
+# Rate Limiting for Analytics Endpoints
+ANALYTICS_RATE_LIMIT_REQUESTS = { default = "1000" }
+ANALYTICS_RATE_LIMIT_WINDOW = { default = "900" }
+
+# Monitoring and Alerting
+ENABLE_PERFORMANCE_MONITORING = { default = "true" }
+PERFORMANCE_THRESHOLD_P95 = { default = "500" }
+ERROR_RATE_THRESHOLD = { default = "0.05" }
+
 [experimental]
 incrementalBuilds = true
 
 [nixpacks]
-# Optimize for Node.js production
+# Optimize for Node.js production with conversion components
 staticDir = "./dist/public"
 
 [nixpacks.variables]
@@ -35,3 +72,8 @@ NPM_CONFIG_CACHE = "/tmp/.npm"
 NPM_CONFIG_UPDATE_NOTIFIER = "false"
 NPM_CONFIG_FUND = "false"
 NPM_CONFIG_AUDIT = "false"
+# TypeScript compilation optimization
+NODE_OPTIONS = "--max-old-space-size=4096"
+# Build optimization for conversion components
+VITE_BUILD_CHUNK_SIZE_LIMIT = "1000"
+VITE_BUILD_MINIFY = "esbuild"

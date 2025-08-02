@@ -16,17 +16,34 @@ const app = express();
 // These endpoints are used by Railway for health checks and must be accessible via HTTP
 app.get('/health', async (req, res) => {
   const startTime = Date.now();
+  const env = getEnv();
+  
   const healthCheck = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
+    environment: env.NODE_ENV,
     uptime: process.uptime(),
     version: process.env.npm_package_version || '1.0.0',
     services: {
       database: 'unknown',
-      firebase: process.env.FIREBASE_PROJECT_ID ? 'configured' : 'not_configured',
-      stripe: process.env.STRIPE_SECRET_KEY ? 'configured' : 'not_configured',
-      openai: process.env.OPENAI_API_KEY ? 'configured' : 'not_configured'
+      firebase: env.FIREBASE_PROJECT_ID ? 'configured' : 'not_configured',
+      stripe: env.STRIPE_SECRET_KEY ? 'configured' : 'not_configured',
+      openai: env.OPENAI_API_KEY ? 'configured' : 'not_configured',
+      analytics: env.ANALYTICS_ENABLED ? 'enabled' : 'disabled',
+      abTesting: env.AB_TESTING_ENABLED ? 'enabled' : 'disabled'
+    },
+    conversion: {
+      tracking: env.CONVERSION_TRACKING_ENABLED,
+      privacy: {
+        gdpr: env.GDPR_COMPLIANCE_ENABLED,
+        ccpa: env.CCPA_COMPLIANCE_ENABLED,
+        anonymizeIps: env.ANONYMIZE_IPS
+      },
+      performance: {
+        monitoring: env.ENABLE_PERFORMANCE_MONITORING,
+        threshold: `${env.PERFORMANCE_THRESHOLD_P95}ms`,
+        errorThreshold: `${(env.ERROR_RATE_THRESHOLD * 100).toFixed(1)}%`
+      }
     },
     checks: {
       memory: {
@@ -47,8 +64,34 @@ app.get('/health', async (req, res) => {
     
     await Promise.race([dbCheckPromise, timeoutPromise]);
     healthCheck.services.database = 'connected';
+    
+    // Check if conversion tracking tables exist
+    try {
+      const conversionTablesCheck = pool.query(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name IN ('analytics_events', 'ab_tests', 'conversion_funnels', 'user_consent')
+      `);
+      const conversionTablesResult = await Promise.race([
+        conversionTablesCheck,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Conversion tables check timeout')), 2000))
+      ]);
+      
+      healthCheck.conversion = {
+        ...healthCheck.conversion,
+        tablesReady: conversionTablesResult.rows.length === 4
+      };
+    } catch (error) {
+      logger.warn('Conversion tables check failed:', error);
+      healthCheck.conversion = {
+        ...healthCheck.conversion,
+        tablesReady: false
+      };
+    }
+    
   } catch (error) {
-    console.error('Health check database error:', error);
+    logger.error('Health check database error:', error);
     healthCheck.services.database = 'disconnected';
     // Don't fail health check to prevent restart loops
   }

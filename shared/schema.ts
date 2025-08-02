@@ -184,6 +184,190 @@ export const userRecentHooks = pgTable("user_recent_hooks", {
   index("idx_user_recent_hooks_user_created").on(table.userId, table.createdAt)
 ]);
 
+// Analytics Events Table for conversion tracking
+export const analyticsEvents = pgTable("analytics_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  eventType: varchar("event_type").notNull(),
+  eventData: jsonb("event_data").$type<{
+    component?: string;
+    variant?: string;
+    platform?: string;
+    ctaId?: string;
+    ctaText?: string;
+    ctaPosition?: string;
+    viewDuration?: number;
+    scrollDepth?: number;
+    conversionValue?: number;
+    testVariant?: string;
+    metadata?: Record<string, any>;
+  }>().notNull().default({}),
+  deviceInfo: jsonb("device_info").$type<{
+    userAgent: string;
+    platform: 'desktop' | 'mobile' | 'tablet';
+    screenResolution: [number, number];
+    timezone: string;
+    language: string;
+  }>().notNull(),
+  pageInfo: jsonb("page_info").$type<{
+    url: string;
+    referrer: string;
+    title: string;
+    path: string;
+    queryParams: Record<string, string>;
+  }>().notNull(),
+  ipAddress: varchar("ip_address"), // Nullable for privacy compliance
+  userConsent: boolean("user_consent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  // Performance indexes for analytics queries
+  index("idx_analytics_events_session_id").on(table.sessionId),
+  index("idx_analytics_events_user_id").on(table.userId),
+  index("idx_analytics_events_event_type").on(table.eventType),
+  index("idx_analytics_events_created_at").on(table.createdAt),
+  index("idx_analytics_events_user_event_type").on(table.userId, table.eventType),
+  index("idx_analytics_events_session_created").on(table.sessionId, table.createdAt),
+  // Data integrity constraints
+  check("event_type_values", sql`${table.eventType} IN ('cta_click', 'cta_view', 'cta_hover', 'trust_signal_view', 'urgency_indicator_view', 'funnel_step', 'ab_test_exposure', 'error', 'performance', 'page_view', 'user_identified', 'session_reset', 'conversion')`),
+]);
+
+// A/B Testing Configuration Table
+export const abTests = pgTable("ab_tests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  testName: varchar("test_name").notNull(),
+  testDescription: text("test_description"),
+  status: varchar("status").notNull().default("draft"),
+  variants: jsonb("variants").$type<Record<string, {
+    id: string;
+    weight: number;
+    config: Record<string, any>;
+  }>>().notNull(),
+  trafficAllocation: integer("traffic_allocation").notNull().default(100), // 0-100
+  targetingRules: jsonb("targeting_rules").$type<{
+    userSegments?: string[];
+    geoTargeting?: string[];
+    deviceTypes?: ('mobile' | 'tablet' | 'desktop')[];
+    customRules?: Record<string, any>;
+  }>(),
+  minSampleSize: integer("min_sample_size").default(100),
+  significanceLevel: integer("significance_level").default(95), // 95% confidence
+  primaryMetric: varchar("primary_metric").default("conversion_rate"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  winnerVariant: varchar("winner_variant"),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  // Performance indexes
+  index("idx_ab_tests_status").on(table.status),
+  index("idx_ab_tests_created_at").on(table.createdAt),
+  index("idx_ab_tests_start_end_date").on(table.startDate, table.endDate),
+  // Data integrity constraints
+  check("status_values", sql`${table.status} IN ('draft', 'running', 'paused', 'completed', 'archived')`),
+  check("traffic_allocation_range", sql`${table.trafficAllocation} >= 0 AND ${table.trafficAllocation} <= 100`),
+  check("significance_level_range", sql`${table.significanceLevel} >= 90 AND ${table.significanceLevel} <= 99`)
+]);
+
+// A/B Test Participants Table
+export const abTestParticipants = pgTable("ab_test_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  testId: varchar("test_id").notNull().references(() => abTests.id, { onDelete: "cascade" }),
+  sessionId: varchar("session_id").notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  variantId: varchar("variant_id").notNull(),
+  exposureTime: timestamp("exposure_time").defaultNow(),
+  converted: boolean("converted").default(false),
+  conversionTime: timestamp("conversion_time"),
+  conversionValue: integer("conversion_value").default(0),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  // Performance indexes
+  index("idx_ab_test_participants_test_id").on(table.testId),
+  index("idx_ab_test_participants_session_id").on(table.sessionId),
+  index("idx_ab_test_participants_user_id").on(table.userId),
+  index("idx_ab_test_participants_variant_id").on(table.variantId),
+  index("idx_ab_test_participants_test_variant").on(table.testId, table.variantId),
+  index("idx_ab_test_participants_converted").on(table.converted),
+  // Unique constraint to prevent duplicate participation
+  index("idx_ab_test_participants_unique").on(table.testId, table.sessionId)
+]);
+
+// Conversion Funnels Table
+export const conversionFunnels = pgTable("conversion_funnels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  funnelName: varchar("funnel_name").notNull(),
+  funnelDescription: text("funnel_description"),
+  steps: jsonb("steps").$type<Array<{
+    stepIndex: number;
+    stepName: string;
+    stepType: string;
+    requiredEvent: string;
+    optional: boolean;
+  }>>().notNull(),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  // Performance indexes
+  index("idx_conversion_funnels_active").on(table.isActive),
+  index("idx_conversion_funnels_created_at").on(table.createdAt),
+  index("idx_conversion_funnels_name").on(table.funnelName)
+]);
+
+// Funnel Events Table
+export const funnelEvents = pgTable("funnel_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  funnelId: varchar("funnel_id").notNull().references(() => conversionFunnels.id, { onDelete: "cascade" }),
+  sessionId: varchar("session_id").notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "set null" }),
+  stepIndex: integer("step_index").notNull(),
+  stepName: varchar("step_name").notNull(),
+  previousStep: varchar("previous_step"),
+  timeFromPrevious: integer("time_from_previous"), // in milliseconds
+  abandoned: boolean("abandoned").default(false),
+  completed: boolean("completed").default(false),
+  eventData: jsonb("event_data").$type<Record<string, any>>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  // Performance indexes
+  index("idx_funnel_events_funnel_id").on(table.funnelId),
+  index("idx_funnel_events_session_id").on(table.sessionId),
+  index("idx_funnel_events_user_id").on(table.userId),
+  index("idx_funnel_events_step_index").on(table.stepIndex),
+  index("idx_funnel_events_funnel_session").on(table.funnelId, table.sessionId),
+  index("idx_funnel_events_completed").on(table.completed),
+  index("idx_funnel_events_abandoned").on(table.abandoned)
+]);
+
+// User Consent Management Table
+export const userConsent = pgTable("user_consent", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
+  analyticsConsent: boolean("analytics_consent").default(false),
+  marketingConsent: boolean("marketing_consent").default(false),
+  personalizationConsent: boolean("personalization_consent").default(false),
+  consentVersion: varchar("consent_version").notNull().default("1.0"),
+  ipAddress: varchar("ip_address"), // For legal compliance
+  userAgent: text("user_agent"),
+  consentMethod: varchar("consent_method").default("explicit"), // explicit, implicit, essential
+  withdrawnAt: timestamp("withdrawn_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  // Performance indexes
+  index("idx_user_consent_session_id").on(table.sessionId),
+  index("idx_user_consent_user_id").on(table.userId),
+  index("idx_user_consent_analytics").on(table.analyticsConsent),
+  index("idx_user_consent_created_at").on(table.createdAt),
+  // Data integrity constraints
+  check("consent_method_values", sql`${table.consentMethod} IN ('explicit', 'implicit', 'essential')`)
+]);
+
 // Auth schemas
 export const registerSchema = z.object({
   email: z.string().email("Please enter a valid email address"),

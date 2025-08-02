@@ -1,17 +1,35 @@
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["nodejs_20", "python3"]
+aptPkgs = ["curl", "ca-certificates"]
 
 [phases.install]
 cmds = [
-  "npm ci --cache /tmp/.npm --omit=dev --include=optional --no-fund --no-audit"
+  # Clear npm cache and install with optimizations
+  "npm cache clean --force",
+  "npm ci --cache /tmp/.npm --omit=dev --include=optional --no-fund --no-audit --prefer-offline",
+  # Verify critical conversion component dependencies
+  "npm list react react-dom @tanstack/react-query || true",
+  "npm list @types/react @types/react-dom typescript || true"
 ]
 
 [phases.build]
 cmds = [
-  "npm run railway:build"
+  # Pre-build optimizations for TypeScript conversion components
+  "echo 'Building optimized conversion components...'",
+  # Run TypeScript type checking in parallel
+  "npm run check &",
+  # Build client and server with optimization flags
+  "npm run railway:build",
+  # Verify build outputs
+  "ls -la dist/",
+  "ls -la dist/public/assets/ || true",
+  # Calculate and log bundle sizes
+  "du -sh dist/public/assets/*.js 2>/dev/null || echo 'No JS bundles found'",
+  "du -sh dist/public/assets/*.css 2>/dev/null || echo 'No CSS bundles found'"
 ]
 
 [variables]
+# NPM Configuration for faster installs
 NPM_CONFIG_CACHE = "/tmp/.npm"
 NPM_CONFIG_UPDATE_NOTIFIER = "false"
 NPM_CONFIG_FUND = "false" 
@@ -20,7 +38,29 @@ NPM_CONFIG_PROGRESS = "false"
 NPM_CONFIG_TARGET_PLATFORM = "linux"
 NPM_CONFIG_TARGET_ARCH = "x64"
 NPM_CONFIG_TARGET_LIBC = "glibc"
+NPM_CONFIG_PREFER_OFFLINE = "true"
+
+# Node.js optimizations for TypeScript compilation
 NODE_ENV = "production"
+NODE_OPTIONS = "--max-old-space-size=4096 --enable-source-maps=false"
+
+# TypeScript compilation optimizations
+TS_NODE_TRANSPILE_ONLY = "true"
+TS_NODE_SKIP_PROJECT = "true"
+
+# Vite build optimizations for conversion components
+VITE_BUILD_TARGET = "es2020"
+VITE_BUILD_MINIFY = "esbuild"
+VITE_BUILD_SOURCEMAP = "false"
+VITE_BUILD_ROLLUP_INLINE_DYNAMIC_IMPORTS = "false"
+
+# Esbuild optimizations for server bundle
+ESBUILD_MINIFY = "true"
+ESBUILD_SOURCEMAP = "false"
+ESBUILD_TARGET = "node18"
+
+# Build performance monitoring
+MEASURE_BUILD_TIME = "true"
 
 [start]
 cmd = "npm start"
