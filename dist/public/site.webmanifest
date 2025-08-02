@@ -1,0 +1,23 @@
+{
+  "name": "Hook Line Studio - AI Hook Generator",
+  "short_name": "Hook Line Studio",
+  "description": "Generate 10 platform-optimized social media hooks in 30 seconds. Built for TikTok, Instagram, and YouTube creators.",
+  "icons": [
+    {
+      "src": "/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#14233B",
+  "background_color": "#ffffff",
+  "categories": ["productivity", "social", "business"],
+  "orientation": "portrait-primary"
+}
