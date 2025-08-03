@@ -1,36 +1,6 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "dist/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb",
-        "maxDuration": 30
-      }
-    },
-    {
-      "src": "dist/public/**/*",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/health",
-      "dest": "dist/index.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "dist/index.js"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "dist/public/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "dist/public/index.html"
-    }
-  ],
-  "buildCommand": "npm run vercel:build"
+  "buildCommand": "npm run vercel:build",
+  "outputDirectory": "dist/public",
+  "installCommand": "npm ci",
+  "devCommand": "npm run vercel:dev"
 }
