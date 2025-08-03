@@ -4,8 +4,8 @@ aptPkgs = ["curl", "ca-certificates"]
 
 [phases.install]
 cmds = [
-  # FORCE COMPLETE CACHE CLEAR - Railway cache bust v2025.08.03.002
-  "echo 'FORCING COMPLETE CACHE INVALIDATION - Build ID: v2025.08.03.002'",
+  # FORCE COMPLETE CACHE CLEAR - Railway cache bust v2025.08.03.004
+  "echo 'FORCING COMPLETE CACHE INVALIDATION - Build ID: v2025.08.03.004'",
   "rm -rf node_modules/.cache || true",
   "rm -rf .cache || true", 
   "rm -rf /tmp/.npm || true",
@@ -39,8 +39,8 @@ cmds = [
 
 [phases.build]
 cmds = [
-  # FORCE FRESH BUILD - Railway cache bust v2025.08.03.002
-  "echo 'FORCING FRESH BUILD - Cache Bust ID: v2025.08.03.002'",
+  # FORCE FRESH BUILD - Railway cache bust v2025.08.03.004
+  "echo 'FORCING FRESH BUILD - Cache Bust ID: v2025.08.03.004'",
   "rm -rf dist || true",
   "rm -rf .vite || true",
   "rm -rf node_modules/.vite || true",
@@ -53,6 +53,11 @@ cmds = [
   "echo \"VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-NOT_SET}\"",
   "echo \"VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-NOT_SET}\"",
   "echo \"NODE_ENV: ${NODE_ENV:-NOT_SET}\"",
+  "echo \"RAILWAY_ENVIRONMENT: ${RAILWAY_ENVIRONMENT:-NOT_SET}\"",
+  "echo \"Railway Service: ${RAILWAY_SERVICE_NAME:-NOT_SET}\"",
+  # Show all VITE_ variables that Railway might have set
+  "echo 'All VITE_ environment variables:'",
+  "env | grep '^VITE_' || echo 'No VITE_ variables found in environment'",
   # Kill any esbuild services from previous operations
   "pkill -f 'esbuild.*service' || true",
   # Wait a moment for services to fully terminate
@@ -94,9 +99,8 @@ TS_NODE_SKIP_PROJECT = "true"
 
 # CRITICAL: Firebase Environment Variables for Vite Build
 # These MUST be present during build time for client-side Firebase to work
-# Railway automatically provides these from environment variables if set
-VITE_FIREBASE_API_KEY = "${VITE_FIREBASE_API_KEY}"
-VITE_FIREBASE_APP_ID = "${VITE_FIREBASE_APP_ID}"
+# Railway provides these from project environment variables - DO NOT override here
+# Let Railway environment variables pass through naturally to the build process
 
 # Vite build optimizations for conversion components
 VITE_BUILD_TARGET = "es2020"
@@ -119,8 +123,8 @@ NO_COLOR = "1"
 # Build performance monitoring
 MEASURE_BUILD_TIME = "true"
 # Force cache invalidation - Firebase env vars fix
-BUILD_ID = "v2025.08.03.002"
-CACHE_BUST_TIMESTAMP = "2025-08-03T10:30:00Z"
+BUILD_ID = "v2025.08.03.004"
+CACHE_BUST_TIMESTAMP = "2025-08-03T14:15:00Z"
 FORCE_FRESH_BUILD = "true"
 # Firebase environment validation
 FIREBASE_ENV_VALIDATION = "enabled"

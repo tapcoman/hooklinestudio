@@ -16,7 +16,13 @@ PORT = { default = "5000" }
 
 # Core Application Environment Variables
 # Railway will automatically provide DATABASE_URL when PostgreSQL service is connected
-# You need to set these in Railway dashboard:
+# You MUST set these in Railway dashboard for the application to work:
+# 
+# CLIENT-SIDE VARIABLES (MUST have VITE_ prefix):
+# VITE_FIREBASE_API_KEY - Firebase Web API Key (from Project Settings)
+# VITE_FIREBASE_APP_ID - Firebase App ID (from Project Settings)
+#
+# SERVER-SIDE VARIABLES:
 # FIREBASE_PROJECT_ID
 # FIREBASE_CLIENT_EMAIL  
 # FIREBASE_PRIVATE_KEY
@@ -85,6 +91,8 @@ VITE_BUILD_CHUNK_SIZE_LIMIT = "1000"
 VITE_BUILD_MINIFY = "esbuild"
 # Force cache invalidation
 BUILD_TIMESTAMP = { default = "${new Date().toISOString()}" }
-CACHE_BUST_VERSION = { default = "v2025.08.03.001" }
+CACHE_BUST_VERSION = { default = "v2025.08.03.004" }
 # Force clean builds
 FORCE_CLEAN_BUILD = { default = "true" }
+# Force Railway CDN cache invalidation
+RAILWAY_STATIC_URL_CACHE_CONTROL = { default = "no-cache, no-store, must-revalidate" }
