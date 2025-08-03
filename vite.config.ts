@@ -4,6 +4,7 @@ import path from "path";
 
 export default defineConfig(async ({ mode }): Promise<UserConfig> => {
   return {
+  envPrefix: ['VITE_'],
   plugins: [
     react({
       jsxRuntime: 'automatic',
@@ -55,8 +56,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           }
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.003.js",
-        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.003.js",
+        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.007.js",
+        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.007.js",
       },
     },
     chunkSizeWarningLimit: 1000,
