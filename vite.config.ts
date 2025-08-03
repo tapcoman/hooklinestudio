@@ -34,53 +34,6 @@ export default defineConfig({
     sourcemap: process.env.NODE_ENV !== "production",
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Core React dependencies
-          if (id.includes("react") || id.includes("react-dom")) {
-            return "react-vendor";
-          }
-          // Conversion optimization components
-          if (id.includes("/components/ConversionHero") || 
-              id.includes("/components/InteractiveCTA") || 
-              id.includes("/components/TrustSignals") || 
-              id.includes("/components/UrgencyIndicators") ||
-              id.includes("/components/StickyMicroCTA") ||
-              id.includes("/components/CTABand")) {
-            return "conversion-components";
-          }
-          // Analytics and tracking
-          if (id.includes("/hooks/useConversionTracking") ||
-              id.includes("/lib/analytics") ||
-              id.includes("/types/analytics") ||
-              id.includes("/types/conversion")) {
-            return "analytics";
-          }
-          // UI Library components
-          if (id.includes("@radix-ui/") || id.includes("/components/ui/")) {
-            return "ui-library";
-          }
-          // Utility libraries
-          if (id.includes("clsx") || 
-              id.includes("tailwind-merge") || 
-              id.includes("date-fns") ||
-              id.includes("framer-motion")) {
-            return "utilities";
-          }
-          // Query and state management
-          if (id.includes("@tanstack/react-query") || 
-              id.includes("wouter") ||
-              id.includes("zustand")) {
-            return "state-management";
-          }
-          // Firebase and authentication
-          if (id.includes("firebase") || id.includes("auth")) {
-            return "firebase";
-          }
-          // Default vendor chunk for other node_modules
-          if (id.includes("node_modules")) {
-            return "vendor";
-          }
-        },
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split(".") || [];
           const ext = info[info.length - 1];
@@ -95,13 +48,6 @@ export default defineConfig({
         chunkFileNames: "assets/js/[name]-[hash].js",
         entryFileNames: "assets/js/[name]-[hash].js",
       },
-      // Optimize for conversion components
-      external: [],
-      treeshake: {
-        moduleSideEffects: false,
-        propertyReadSideEffects: false,
-        unknownGlobalSideEffects: false
-      }
     },
     chunkSizeWarningLimit: 1000,
     assetsInlineLimit: 4096,
