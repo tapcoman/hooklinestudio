@@ -3,6 +3,7 @@
  * Provides type-safe analytics, A/B testing, and performance monitoring
  */
 
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { analytics } from '@/lib/analytics';
 import type { 
   UseConversionTrackingReturn,
