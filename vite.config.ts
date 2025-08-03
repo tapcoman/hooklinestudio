@@ -7,14 +7,7 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
   plugins: [
     react({
       jsxRuntime: 'automatic',
-      jsxImportSource: 'react',
-      babel: {
-        plugins: [
-          ['@babel/plugin-transform-react-jsx', {
-            runtime: 'automatic'
-          }]
-        ]
-      }
+      jsxImportSource: 'react'
     }),
     // Only include Replit-specific plugins in development on Replit
     ...(mode !== "production" &&
@@ -48,7 +41,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
         format: 'es',
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'react-hooks': ['react', 'react-dom']
+          'ui-vendor': ['@radix-ui/react-slot', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+          'utils-vendor': ['clsx', 'tailwind-merge', 'lucide-react']
         },
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split(".") || [];
