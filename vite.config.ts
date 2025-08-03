@@ -40,11 +40,24 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
       external: [],
       output: {
         format: 'es',
-        manualChunks: {
-          // Removed React from manual chunks to fix hooks initialization issue
-          // React will be automatically bundled by Vite for proper hook dispatcher initialization
-          'ui-vendor': ['@radix-ui/react-slot', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-          'utils-vendor': ['clsx', 'tailwind-merge', 'lucide-react']
+        manualChunks: (id) => {
+          // Critical fix for React Hook dispatcher issues on Vercel
+          // Keep React ecosystem together to prevent hook context fragmentation
+          if (id.includes('react') || id.includes('react-dom') || id.includes('@radix-ui')) {
+            return 'react-vendor';
+          }
+          // UI libraries that depend on React (excluding Radix which is now with React)
+          if (id.includes('framer-motion')) {
+            return 'ui-vendor';
+          }
+          // Independent utilities
+          if (id.includes('clsx') || id.includes('tailwind-merge') || id.includes('lucide-react')) {
+            return 'utils-vendor';
+          }
+          // Keep node_modules together for better caching
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
         },
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split(".") || [];
@@ -57,8 +70,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           }
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.009.js",
-        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.009.js",
+        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.010.js",
+        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.010.js",
       },
     },
     chunkSizeWarningLimit: 1000,
@@ -71,8 +84,17 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
     write: true,
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-dom/client'],
+    include: [
+      'react', 
+      'react-dom', 
+      'react-dom/client',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu'
+    ],
     force: true,
+    // Ensure React hooks are properly resolved
+    entries: ['client/src/main.tsx'],
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),

@@ -4,7 +4,7 @@
  * Designed for optimal Core Web Vitals and conversion component performance
  */
 
-import { 
+import React, { 
   useCallback, 
   useMemo, 
   useRef, 

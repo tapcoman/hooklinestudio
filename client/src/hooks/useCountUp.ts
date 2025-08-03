@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 
 interface UseCountUpOptions {
   end: number;

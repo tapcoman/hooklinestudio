@@ -753,6 +753,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics endpoints
+  app.get("/api/analytics/health", async (req, res) => {
+    try {
+      res.json({
+        status: 'healthy',
+        timestamp: Date.now(),
+        endpoints: [
+          '/api/analytics/performance',
+          '/api/analytics/performance-violation',
+          '/api/analytics/batch'
+        ]
+      });
+    } catch (error) {
+      res.status(500).json({ status: 'unhealthy', error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/analytics/performance", async (req, res) => {
+    try {
+      // Return basic performance metrics structure
+      // In a real implementation, this would fetch from a database or analytics service
+      const performanceMetrics = {
+        coreWebVitals: {
+          LCP: { value: 2100, rating: 'good' },
+          FID: { value: 85, rating: 'good' },
+          CLS: { value: 0.08, rating: 'good' },
+          FCP: { value: 1600, rating: 'good' },
+          TTFB: { value: 650, rating: 'good' }
+        },
+        serverMetrics: {
+          responseTime: 120,
+          uptime: 99.9,
+          errorRate: 0.01
+        },
+        timestamp: Date.now()
+      };
+      
+      res.json(performanceMetrics);
+    } catch (error) {
+      console.error("Error fetching performance analytics:", error);
+      res.status(500).json({ message: "Failed to fetch performance data" });
+    }
+  });
+
+  app.post("/api/analytics/performance-violation", async (req, res) => {
+    try {
+      // In a real implementation, this would store violations in a database
+      console.log("Performance violation reported:", req.body);
+      
+      // For now, just acknowledge receipt
+      res.json({ received: true, timestamp: Date.now() });
+    } catch (error) {
+      console.error("Error recording performance violation:", error);
+      res.status(500).json({ message: "Failed to record violation" });
+    }
+  });
+
+  app.post("/api/analytics/batch", async (req, res) => {
+    try {
+      // In a real implementation, this would batch process analytics events
+      console.log("Analytics batch received:", req.body);
+      
+      // For now, just acknowledge receipt
+      res.json({ 
+        received: true, 
+        processed: req.body?.events?.length || 0,
+        timestamp: Date.now() 
+      });
+    } catch (error) {
+      console.error("Error processing analytics batch:", error);
+      res.status(500).json({ message: "Failed to process analytics batch" });
+    }
+  });
+
   // Stripe webhook endpoint (no auth required)
   app.post("/api/stripe/webhook", express.raw({ type: 'application/json' }), async (req, res) => {
     const sig = req.headers['stripe-signature'];

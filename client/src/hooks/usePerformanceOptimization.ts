@@ -5,15 +5,16 @@
  */
 
 import { 
+  useState, 
+  useEffect, 
   useCallback, 
   useMemo, 
-  useRef, 
-  useEffect, 
-  useState,
+  useRef,
   type DependencyList,
   type EffectCallback,
   type MutableRefObject
 } from 'react';
+import React from 'react';
 import type { 
   UsePerformanceOptimizationReturn,
   CallbackConfig,
