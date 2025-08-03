@@ -5,8 +5,8 @@ builder = "nixpacks"
 preDeploy = "node scripts/railway-drizzle.js"
 startCommand = "npm run start"
 healthcheckPath = "/health"
-healthcheckTimeout = 300
-healthcheckInterval = 30
+healthcheckTimeout = 60
+healthcheckInterval = 15
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 5
 

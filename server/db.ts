@@ -41,22 +41,85 @@ const isRailwayInternalUrl = process.env.DATABASE_URL?.includes('railway.interna
 
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: process.env.NODE_ENV === 'production' ? 20 : 15, // Reduced max connections for Railway stability
-  min: isRailwayEnvironment ? 1 : 2, // Maintain at least 1 connection for Railway health checks
-  idleTimeoutMillis: isRailwayEnvironment ? 30000 : 60000, // Shorter idle timeout for Railway
-  connectionTimeoutMillis: isRailwayInternalUrl ? 15000 : 5000, // Longer timeout for Railway internal URLs
-  statementTimeout: 20000, // Shorter statement timeout
-  query_timeout: 20000, // Shorter query timeout
-  acquireTimeoutMillis: isRailwayInternalUrl ? 30000 : 10000, // Railway-optimized acquire timeout
-  createTimeoutMillis: isRailwayInternalUrl ? 15000 : 5000, // Railway-optimized create timeout
-  destroyTimeoutMillis: 3000, // Faster destroy timeout
-  reapIntervalMillis: 2000, // More frequent cleanup for Railway
-  createRetryIntervalMillis: isRailwayInternalUrl ? 2000 : 500, // Slower retries for Railway
-  propagateCreateError: false, // Don't crash if initial connection fails
+  max: process.env.NODE_ENV === 'production' ? 15 : 10, // More conservative max connections
+  min: isRailwayEnvironment ? 2 : 1, // Ensure minimum connections for health checks
+  idleTimeoutMillis: 60000, // Standard idle timeout
+  connectionTimeoutMillis: isRailwayInternalUrl ? 30000 : 10000, // Generous timeout for Railway internal URLs
+  statementTimeout: 30000, // More generous statement timeout
+  query_timeout: 30000, // More generous query timeout
+  acquireTimeoutMillis: isRailwayInternalUrl ? 45000 : 15000, // Railway-optimized acquire timeout
+  createTimeoutMillis: isRailwayInternalUrl ? 30000 : 10000, // Railway-optimized create timeout
+  destroyTimeoutMillis: 5000, // Standard destroy timeout
+  reapIntervalMillis: 5000, // Standard cleanup interval
+  createRetryIntervalMillis: isRailwayInternalUrl ? 3000 : 1000, // Reasonable retries for Railway
+  propagateCreateError: true, // Show connection errors for debugging
   // Railway-specific optimizations
-  allowExitOnIdle: isRailwayEnvironment, // Allow process to exit when all clients are idle
-  maxUses: isRailwayEnvironment ? 7500 : 10000, // Rotate connections more frequently on Railway
-  application_name: `hooklinestudio-${process.env.RAILWAY_ENVIRONMENT || 'local'}`
+  allowExitOnIdle: false, // Keep connections alive for health checks
+  maxUses: 10000, // Standard connection rotation
+  application_name: `hooklinestudio-${process.env.RAILWAY_ENVIRONMENT || 'local'}`,
+  // Enhanced SSL configuration for Railway
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 export const db = drizzle({ client: pool, schema });
+
+// Database connection health checker function
+export async function testDatabaseConnection(timeout = 10000): Promise<{ success: boolean; error?: string; connectionInfo?: any }> {
+  try {
+    const testQuery = pool.query('SELECT 1 as health, NOW() as current_time, version() as db_version');
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(`Database connection timeout after ${timeout}ms`)), timeout)
+    );
+    
+    const result = await Promise.race([testQuery, timeoutPromise]);
+    
+    return {
+      success: true,
+      connectionInfo: {
+        version: result.rows[0]?.db_version?.split(' ')[0] || 'unknown',
+        time: result.rows[0]?.current_time,
+        poolStats: {
+          totalCount: pool.totalCount,
+          idleCount: pool.idleCount,
+          waitingCount: pool.waitingCount
+        }
+      }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+// Initialize connection pool with retry logic for Railway
+export async function initializeDatabase(): Promise<void> {
+  const maxRetries = 5;
+  const retryDelay = 2000; // 2 seconds
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Database connection attempt ${attempt}/${maxRetries}...`);
+      const connectionTest = await testDatabaseConnection(15000);
+      
+      if (connectionTest.success) {
+        console.log('✅ Database connection established successfully');
+        console.log(`Database version: ${connectionTest.connectionInfo?.version}`);
+        return;
+      } else {
+        throw new Error(connectionTest.error);
+      }
+    } catch (error) {
+      console.log(`❌ Database connection attempt ${attempt} failed:`, error instanceof Error ? error.message : String(error));
+      
+      if (attempt === maxRetries) {
+        console.error('🚨 Failed to establish database connection after all retries');
+        throw error;
+      }
+      
+      console.log(`⏳ Retrying in ${retryDelay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
+    }
+  }
+}

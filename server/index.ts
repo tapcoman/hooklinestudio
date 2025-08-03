@@ -55,18 +55,22 @@ app.get('/health', async (req, res) => {
   };
 
   try {
-    // Quick database check with timeout
-    const { pool } = await import('./db');
-    const dbCheckPromise = pool.query('SELECT 1 as health_check');
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Database timeout')), 3000)
-    );
+    // Enhanced database health check with better error handling
+    const { testDatabaseConnection } = await import('./db');
     
-    await Promise.race([dbCheckPromise, timeoutPromise]);
-    healthCheck.services.database = 'connected';
+    // Test database connectivity with proper timeout
+    const dbTest = await testDatabaseConnection(10000);
     
-    // Check if conversion tracking tables exist
+    if (dbTest.success) {
+      healthCheck.services.database = 'connected';
+      healthCheck.services.databaseDetails = dbTest.connectionInfo;
+    } else {
+      throw new Error(dbTest.error || 'Unknown database error');
+    }
+    
+    // Check if conversion tracking tables exist with better error handling
     try {
+      const { pool } = await import('./db');
       const conversionTablesCheck = pool.query(`
         SELECT table_name 
         FROM information_schema.tables 
@@ -75,25 +79,42 @@ app.get('/health', async (req, res) => {
       `);
       const conversionTablesResult = await Promise.race([
         conversionTablesCheck,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Conversion tables check timeout')), 2000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Conversion tables check timeout')), 5000))
       ]);
       
+      const tableNames = conversionTablesResult.rows.map(row => row.table_name);
       healthCheck.conversion = {
         ...healthCheck.conversion,
-        tablesReady: conversionTablesResult.rows.length === 4
+        tablesReady: conversionTablesResult.rows.length === 4,
+        tablesFound: tableNames,
+        tableCount: conversionTablesResult.rows.length
       };
     } catch (error) {
       logger.warn('Conversion tables check failed:', error);
       healthCheck.conversion = {
         ...healthCheck.conversion,
-        tablesReady: false
+        tablesReady: false,
+        error: error instanceof Error ? error.message : String(error)
       };
     }
     
   } catch (error) {
     logger.error('Health check database error:', error);
     healthCheck.services.database = 'disconnected';
-    // Don't fail health check to prevent restart loops
+    healthCheck.services.databaseError = error.message;
+    healthCheck.status = 'unhealthy';
+    
+    // Return 503 for database connection failures in production
+    // This allows Railway to detect the issue and potentially restart
+    const responseTime = Date.now() - startTime;
+    healthCheck.checks = {
+      ...healthCheck.checks,
+      responseTime: `${responseTime}ms`
+    };
+    
+    if (isProduction()) {
+      return res.status(503).json(healthCheck);
+    }
   }
 
   const responseTime = Date.now() - startTime;
@@ -156,6 +177,20 @@ app.use((req, res, next) => {
 (async () => {
   try {
     logger.info('Starting application server...');
+    
+    // Initialize database connection with retry logic for Railway
+    if (isProduction()) {
+      logger.info('Initializing database connection for production...');
+      try {
+        const { initializeDatabase } = await import('./db');
+        await initializeDatabase();
+        logger.info('✅ Database connection initialized successfully');
+      } catch (error) {
+        logger.error('❌ Failed to initialize database connection:', error);
+        // Don't exit immediately in production, let health checks handle it
+        logger.warn('⚠️ Continuing startup despite database connection failure - health checks will monitor connectivity');
+      }
+    }
     
     const server = await registerRoutes(app);
 
