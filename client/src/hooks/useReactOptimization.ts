@@ -165,7 +165,8 @@ export function useReactOptimization(
       return callbackCache.current.get(key);
     }
     
-    const memoizedFn = useCallback(callback, deps);
+    // Create a properly memoized function without nested useCallback
+    const memoizedFn = callback;
     callbackCache.current.set(key, memoizedFn);
     
     // Cache cleanup
@@ -178,9 +179,16 @@ export function useReactOptimization(
   }, []);
 
   // Deferred value for non-critical updates
+  const getDeferredValue = useCallback(<T>(value: T): T => {
+    // Return the raw value - useDeferredValue should be called at component level
+    return value;
+  }, []);
+  
+  // Create a proper deferred value utility
   const deferredValue = useCallback(<T>(value: T): T => {
     if (enableDeferredRendering) {
-      return useDeferredValue(value);
+      // Return value as-is, component should handle useDeferredValue directly
+      return value;
     }
     return value;
   }, [enableDeferredRendering]);
