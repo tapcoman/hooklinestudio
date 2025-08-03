@@ -4,7 +4,7 @@
  * Provides performance insights and conversion impact analysis
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { analytics } from '@/lib/analytics';
 
 // Core Web Vitals types
