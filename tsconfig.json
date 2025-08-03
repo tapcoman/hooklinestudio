@@ -49,7 +49,7 @@
     
     // Libraries and JSX
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "jsxImportSource": "react",
     
     // Path Mapping

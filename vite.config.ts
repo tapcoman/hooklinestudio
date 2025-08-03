@@ -1,20 +1,19 @@
-import { defineConfig } from "vite";
+import { defineConfig, type UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-export default defineConfig({
+export default defineConfig(async ({ mode }): Promise<UserConfig> => {
+  return {
   plugins: [
     react(),
     // Only include Replit-specific plugins in development on Replit
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
+    ...(mode !== "production" &&
+    process.env['REPL_ID'] !== undefined
       ? [
           // Runtime error overlay
-          await import("@replit/vite-plugin-runtime-error-modal").then((m) => m.default()),
+          (await import("@replit/vite-plugin-runtime-error-modal")).default(),
           // Cartographer plugin
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
+          (await import("@replit/vite-plugin-cartographer")).cartographer(),
         ]
       : []),
   ],
@@ -22,7 +21,6 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
-      "@assets": path.resolve(import.meta.dirname, "attached_assets"),
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
@@ -31,12 +29,12 @@ export default defineConfig({
     emptyOutDir: true,
     target: "es2020",
     minify: "esbuild",
-    sourcemap: process.env.NODE_ENV !== "production",
+    sourcemap: process.env['NODE_ENV'] !== "production",
     rollupOptions: {
       output: {
-        assetFileNames: (assetInfo) => {
+        assetFileNames: (assetInfo: { name?: string }) => {
           const info = assetInfo.name?.split(".") || [];
-          const ext = info[info.length - 1];
+          const ext = info[info.length - 1] || "";
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
             return `assets/images/[name]-[hash][extname]`;
           }
@@ -54,7 +52,7 @@ export default defineConfig({
     // Enable CSS code splitting for better caching
     cssCodeSplit: true,
     // Optimize for Railway deployment
-    reportCompressedSize: process.env.NODE_ENV !== "production",
+    reportCompressedSize: process.env['NODE_ENV'] !== "production",
     // Enable build caching for faster rebuilds
     write: true,
   },
@@ -64,4 +62,5 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
+  };
 });

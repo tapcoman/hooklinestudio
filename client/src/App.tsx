@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Suspense, lazy } from "react";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -180,10 +180,10 @@ export default function App() {
           {/* Core Web Vitals monitoring for performance optimization */}
           <CoreWebVitalsMonitor 
             enableRealTimeTracking={true}
-            enableConsoleLogging={process.env.NODE_ENV === 'development'}
+            enableConsoleLogging={process.env['NODE_ENV'] === 'development'}
             onMetricReceived={(metric) => {
               // Track performance metrics in analytics
-              if (process.env.NODE_ENV === 'production') {
+              if (process.env['NODE_ENV'] === 'production') {
                 // Send to analytics service
                 fetch('/api/analytics/performance', {
                   method: 'POST',
@@ -202,7 +202,7 @@ export default function App() {
             }}
             onInsightsUpdate={(insights) => {
               // Log performance insights in development
-              if (process.env.NODE_ENV === 'development' && insights.overallScore < 60) {
+              if (process.env['NODE_ENV'] === 'development' && insights.overallScore < 60) {
                 console.warn('[Performance] Poor Core Web Vitals score:', insights.overallScore);
                 insights.recommendations.forEach(rec => console.warn('[Performance]', rec));
               }
