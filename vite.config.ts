@@ -5,7 +5,10 @@ import path from "path";
 export default defineConfig(async ({ mode }): Promise<UserConfig> => {
   return {
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react'
+    }),
     // Only include Replit-specific plugins in development on Replit
     ...(mode !== "production" &&
     process.env['REPL_ID'] !== undefined
@@ -27,12 +30,14 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Force cache invalidation
+    assetsDir: `assets`,
     target: "es2020",
     minify: "esbuild",
     sourcemap: process.env['NODE_ENV'] !== "production",
     rollupOptions: {
       output: {
-        assetFileNames: (assetInfo: { name?: string }) => {
+        assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split(".") || [];
           const ext = info[info.length - 1] || "";
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
@@ -43,8 +48,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           }
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: "assets/js/[name]-[hash].js",
-        entryFileNames: "assets/js/[name]-[hash].js",
+        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.001.js",
+        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.001.js",
       },
     },
     chunkSizeWarningLimit: 1000,

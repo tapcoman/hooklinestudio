@@ -4,8 +4,14 @@ aptPkgs = ["curl", "ca-certificates"]
 
 [phases.install]
 cmds = [
-  # Clear npm cache and install with optimizations
+  # FORCE COMPLETE CACHE CLEAR - Railway cache bust v2025.08.03.001
+  "echo 'FORCING COMPLETE CACHE INVALIDATION - Build ID: v2025.08.03.001'",
+  "rm -rf node_modules/.cache || true",
+  "rm -rf .cache || true", 
+  "rm -rf /tmp/.npm || true",
+  "rm -rf ~/.npm || true",
   "npm cache clean --force",
+  "npm cache verify || true",
   "npm ci --cache /tmp/.npm --omit=dev --include=optional --no-fund --no-audit --prefer-offline",
   # Kill any existing esbuild services to prevent version mismatches
   "pkill -f 'esbuild.*service' || true",
@@ -32,7 +38,11 @@ cmds = [
 
 [phases.build]
 cmds = [
-  # Pre-build optimizations for TypeScript conversion components
+  # FORCE FRESH BUILD - Railway cache bust v2025.08.03.001
+  "echo 'FORCING FRESH BUILD - Cache Bust ID: v2025.08.03.001'",
+  "rm -rf dist || true",
+  "rm -rf .vite || true",
+  "rm -rf node_modules/.vite || true",
   "echo 'Building optimized conversion components...'",
   # Kill any esbuild services from previous operations
   "pkill -f 'esbuild.*service' || true",
@@ -89,6 +99,10 @@ NO_COLOR = "1"
 
 # Build performance monitoring
 MEASURE_BUILD_TIME = "true"
+# Force cache invalidation
+BUILD_ID = "v2025.08.03.001"
+CACHE_BUST_TIMESTAMP = "2025-08-03T00:00:00Z"
+FORCE_FRESH_BUILD = "true"
 
 [start]
 cmd = "npm start"

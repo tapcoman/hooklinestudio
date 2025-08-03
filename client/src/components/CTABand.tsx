@@ -1,4 +1,4 @@
-import React from 'react';
+import { type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { Container } from './Container';

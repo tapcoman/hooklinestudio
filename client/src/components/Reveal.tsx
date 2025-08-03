@@ -1,9 +1,9 @@
-import React from 'react';
+import { type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { useReducedMotionSafe } from '../hooks/useReducedMotionSafe';
 
 interface RevealProps {
-  children: React.ReactNode;
+  children: ReactNode;
   delay?: number;
   className?: string;
 }
