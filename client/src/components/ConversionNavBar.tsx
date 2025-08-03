@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link, useLocation } from 'wouter';
@@ -14,7 +15,8 @@ import {
   CheckCircle, 
   Star,
   TrendingUp,
-  Zap
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 import { SiTiktok, SiInstagram, SiYoutube } from 'react-icons/si';
 

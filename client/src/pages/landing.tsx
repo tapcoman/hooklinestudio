@@ -6,6 +6,7 @@
 // - Adds accessible markup and clear secondary CTAs
 // - Keeps the traditional craft tone while nudging to onboarding
 
+import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
 import { analytics } from '../lib/analytics';
 import { NavBar } from '../components/NavBar';

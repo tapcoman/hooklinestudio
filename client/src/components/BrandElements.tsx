@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
