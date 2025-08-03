@@ -5,7 +5,8 @@
       "src": "dist/index.js",
       "use": "@vercel/node",
       "config": {
-        "maxLambdaSize": "50mb"
+        "maxLambdaSize": "50mb",
+        "maxDuration": 30
       }
     },
     {
@@ -31,17 +32,5 @@
       "dest": "dist/public/index.html"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "dist/index.js": {
-      "maxDuration": 30
-    }
-  },
-  "regions": ["iad1"],
-  "buildCommand": "npm run vercel:build",
-  "outputDirectory": "dist",
-  "installCommand": "npm ci --omit=dev",
-  "framework": null
+  "buildCommand": "npm run vercel:build"
 }
