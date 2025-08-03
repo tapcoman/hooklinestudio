@@ -1,7 +1,7 @@
 {
   "name": "rest-express",
   "version": "1.0.1",
-  "buildId": "v2025.08.03.005",
+  "buildId": "v2025.08.03.006",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -16,6 +16,9 @@
     "db:push": "node scripts/railway-drizzle.js",
     "db:migrate": "tsx server/scripts/migrate.ts",
     "db:generate": "drizzle-kit generate",
+    "vercel:build": "npm run prebuild:clean && npm run build:client && npm run build:server:vercel",
+    "build:server:vercel": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --minify --sourcemap --define:process.env.NODE_ENV='\"production\"'",
+    "vercel:dev": "NODE_ENV=development tsx server/index.ts",
     "railway:build": "npm run prebuild:railway && npm run prebuild:clean && npm run build",
     "prebuild:railway": "npm run ensure:linux-deps && npm run verify:esbuild",
     "ensure:linux-deps": "npm list @rollup/rollup-linux-x64-gnu || npm install @rollup/rollup-linux-x64-gnu@^4.24.0 --no-save",
