@@ -41,7 +41,7 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
       output: {
         format: 'es',
         manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
+          'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
           'ui-vendor': ['@radix-ui/react-slot', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
           'utils-vendor': ['clsx', 'tailwind-merge', 'lucide-react']
         },
@@ -56,8 +56,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           }
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.007.js",
-        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.007.js",
+        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.008.js",
+        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.008.js",
       },
     },
     chunkSizeWarningLimit: 1000,
@@ -70,7 +70,7 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
     write: true,
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    include: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime'],
     force: true,
   },
   define: {
