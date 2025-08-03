@@ -48,8 +48,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           }
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.001.js",
-        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.001.js",
+        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.002.js",
+        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.002.js",
       },
     },
     chunkSizeWarningLimit: 1000,

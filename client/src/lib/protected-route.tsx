@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
 import { auth } from "@/lib/firebase";
 
 interface ProtectedRouteProps {

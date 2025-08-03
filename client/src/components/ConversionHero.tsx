@@ -9,7 +9,7 @@ import { Reveal } from './Reveal';
 import { OptimizedImage, CriticalImage } from './OptimizedImage';
 import { useReducedMotionSafe } from '../hooks/useReducedMotionSafe';
 import { analytics } from '../lib/analytics';
-import { memo, useCallback, useState, useEffect, type FC, type MouseEventHandler } from 'react';
+import { memo, type FC, type MouseEventHandler } from 'react';
 import type { StrictComponentProps, ResponsiveValue } from '@/types/utils';
 import type { AnalyticsContext } from '@/types/analytics';
 

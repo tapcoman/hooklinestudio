@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 
 export function useReducedMotionSafe(): boolean {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);

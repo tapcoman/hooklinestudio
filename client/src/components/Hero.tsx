@@ -11,7 +11,7 @@ import { RecentlyJoined, HighDemandIndicator } from './UrgencyIndicators';
 import { useReducedMotionSafe } from '../hooks/useReducedMotionSafe';
 import { useCountUp } from '../hooks/useCountUp';
 import { analytics } from '../lib/analytics';
-import { memo, useCallback, useState, useMemo } from 'react';
+import { memo } from 'react';
 
 interface HeroProps { onShowModal: () => void; }
 

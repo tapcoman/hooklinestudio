@@ -4,8 +4,8 @@ aptPkgs = ["curl", "ca-certificates"]
 
 [phases.install]
 cmds = [
-  # FORCE COMPLETE CACHE CLEAR - Railway cache bust v2025.08.03.001
-  "echo 'FORCING COMPLETE CACHE INVALIDATION - Build ID: v2025.08.03.001'",
+  # FORCE COMPLETE CACHE CLEAR - Railway cache bust v2025.08.03.002
+  "echo 'FORCING COMPLETE CACHE INVALIDATION - Build ID: v2025.08.03.002'",
   "rm -rf node_modules/.cache || true",
   "rm -rf .cache || true", 
   "rm -rf /tmp/.npm || true",
@@ -33,17 +33,26 @@ cmds = [
   "cat node_modules/drizzle-kit/package.json | grep '\"version\"' || echo 'drizzle-kit not found'",
   # Make our railway scripts executable
   "chmod +x scripts/railway-esbuild.js",
-  "chmod +x scripts/railway-drizzle.js"
+  "chmod +x scripts/railway-drizzle.js",
+  "chmod +x scripts/validate-env.js"
 ]
 
 [phases.build]
 cmds = [
-  # FORCE FRESH BUILD - Railway cache bust v2025.08.03.001
-  "echo 'FORCING FRESH BUILD - Cache Bust ID: v2025.08.03.001'",
+  # FORCE FRESH BUILD - Railway cache bust v2025.08.03.002
+  "echo 'FORCING FRESH BUILD - Cache Bust ID: v2025.08.03.002'",
   "rm -rf dist || true",
   "rm -rf .vite || true",
   "rm -rf node_modules/.vite || true",
   "echo 'Building optimized conversion components...'",
+  # CRITICAL: Validate environment variables before build
+  "echo '🔍 Validating build-time environment variables...'",
+  "node scripts/validate-env.js",
+  # Debug environment variables before build
+  "echo 'Build Environment Check:'",
+  "echo \"VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY:-NOT_SET}\"",
+  "echo \"VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID:-NOT_SET}\"",
+  "echo \"NODE_ENV: ${NODE_ENV:-NOT_SET}\"",
   # Kill any esbuild services from previous operations
   "pkill -f 'esbuild.*service' || true",
   # Wait a moment for services to fully terminate
@@ -59,7 +68,11 @@ cmds = [
   "ls -la dist/public/assets/ || true",
   # Calculate and log bundle sizes
   "du -sh dist/public/assets/*.js 2>/dev/null || echo 'No JS bundles found'",
-  "du -sh dist/public/assets/*.css 2>/dev/null || echo 'No CSS bundles found'"
+  "du -sh dist/public/assets/*.css 2>/dev/null || echo 'No CSS bundles found'",
+  # Verify Firebase variables are baked into the bundle
+  "echo 'Checking if Firebase variables are in bundle:'",
+  "grep -r 'VITE_FIREBASE' dist/public/assets/ 2>/dev/null || echo 'Firebase env vars not found in bundle - this may be expected if they are processed'",
+  "node -e \"console.log('Build completed at:', new Date().toISOString())\""
 ]
 
 [variables]
@@ -78,6 +91,12 @@ NODE_OPTIONS = "--max-old-space-size=4096 --enable-source-maps=false"
 # TypeScript compilation optimizations
 TS_NODE_TRANSPILE_ONLY = "true"
 TS_NODE_SKIP_PROJECT = "true"
+
+# CRITICAL: Firebase Environment Variables for Vite Build
+# These MUST be present during build time for client-side Firebase to work
+# Railway automatically provides these from environment variables if set
+VITE_FIREBASE_API_KEY = "${VITE_FIREBASE_API_KEY}"
+VITE_FIREBASE_APP_ID = "${VITE_FIREBASE_APP_ID}"
 
 # Vite build optimizations for conversion components
 VITE_BUILD_TARGET = "es2020"
@@ -99,10 +118,12 @@ NO_COLOR = "1"
 
 # Build performance monitoring
 MEASURE_BUILD_TIME = "true"
-# Force cache invalidation
-BUILD_ID = "v2025.08.03.001"
-CACHE_BUST_TIMESTAMP = "2025-08-03T00:00:00Z"
+# Force cache invalidation - Firebase env vars fix
+BUILD_ID = "v2025.08.03.002"
+CACHE_BUST_TIMESTAMP = "2025-08-03T10:30:00Z"
 FORCE_FRESH_BUILD = "true"
+# Firebase environment validation
+FIREBASE_ENV_VALIDATION = "enabled"
 
 [start]
 cmd = "npm start"

@@ -10,7 +10,6 @@ import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/hooks/use-firebase-auth";
-import { useState } from "react";
 import type { FavoriteHook } from "@shared/schema";
 
 export default function Favorites() {
