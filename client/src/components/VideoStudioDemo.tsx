@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { SiTiktok, SiInstagram, SiYoutube } from "react-icons/si";
 import { Play, Pause, Volume2, Eye, FileText } from "lucide-react";

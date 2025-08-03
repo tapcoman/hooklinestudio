@@ -4,6 +4,7 @@
  * Optimized for LCP and overall performance
  */
 
+import { useState } from 'react';
 import { useIntersectionObserver } from '@/hooks/usePerformanceOptimization';
 
 interface OptimizedImageProps {

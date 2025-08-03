@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { MobileHookCard, useSwipeGesture } from './MobileHookCard';
 import { MobileLoading, MobileHookCardSkeleton } from './MobileLoading';
 import { Button } from '@/components/ui/button';
