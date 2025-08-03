@@ -8,7 +8,9 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
   plugins: [
     react({
       jsxRuntime: 'automatic',
-      jsxImportSource: 'react'
+      jsxImportSource: 'react',
+      // Ensure proper React hooks context in production
+      fastRefresh: mode !== 'production'
     }),
     // Only include Replit-specific plugins in development on Replit
     ...(mode !== "production" &&
@@ -33,7 +35,7 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
     emptyOutDir: true,
     // Force cache invalidation
     assetsDir: `assets`,
-    target: "es2020",
+    target: ['es2020', 'chrome80', 'firefox78', 'safari13'],
     minify: "esbuild",
     sourcemap: process.env['NODE_ENV'] !== "production",
     rollupOptions: {
@@ -72,8 +74,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           }
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.011.js",
-        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.011.js",
+        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.012.js",
+        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.012.js",
       },
     },
     chunkSizeWarningLimit: 1000,
