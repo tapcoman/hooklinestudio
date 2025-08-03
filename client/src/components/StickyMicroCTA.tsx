@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, X, Sparkles, Zap, Users, Clock, Play } from 'lucide-react';
