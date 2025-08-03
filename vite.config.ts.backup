@@ -41,11 +41,9 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
       output: {
         format: 'es',
         manualChunks: (id) => {
-          // CRITICAL FIX: Include all React-dependent libraries in react-vendor chunk
-          // This prevents "Cannot read properties of undefined (reading 'useState')" errors
           // Critical fix for React Hook dispatcher issues on Vercel
           // Keep React ecosystem together to prevent hook context fragmentation
-          if (id.includes('react') || id.includes('react-dom') || id.includes('@radix-ui') || id.includes('wouter') || id.includes('@tanstack/react-query') || (id.includes('node_modules') && (id.includes('use-sync-external-store') || id.includes('scheduler')))) {
+          if (id.includes('react') || id.includes('react-dom') || id.includes('@radix-ui')) {
             return 'react-vendor';
           }
           // UI libraries that depend on React (excluding Radix which is now with React)
@@ -72,8 +70,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           }
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.011.js",
-        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.011.js",
+        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.010.js",
+        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.010.js",
       },
     },
     chunkSizeWarningLimit: 1000,
@@ -93,10 +91,7 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
       '@radix-ui/react-slot',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu'
-      ,
-      // Include React-dependent libraries to prevent loading order issues
-      'wouter',
-      '@tanstack/react-query'    ],
+    ],
     force: true,
     // Ensure React hooks are properly resolved
     entries: ['client/src/main.tsx'],
