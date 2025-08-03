@@ -4,8 +4,8 @@ aptPkgs = ["curl", "ca-certificates"]
 
 [phases.install]
 cmds = [
-  # FORCE COMPLETE CACHE CLEAR - Railway cache bust v2025.08.03.004
-  "echo 'FORCING COMPLETE CACHE INVALIDATION - Build ID: v2025.08.03.004'",
+  # FORCE COMPLETE CACHE CLEAR - Railway cache bust v2025.08.03.005
+  "echo 'FORCING COMPLETE CACHE INVALIDATION - Build ID: v2025.08.03.005'",
   "rm -rf node_modules/.cache || true",
   "rm -rf .cache || true", 
   "rm -rf /tmp/.npm || true",
@@ -39,8 +39,8 @@ cmds = [
 
 [phases.build]
 cmds = [
-  # FORCE FRESH BUILD - Railway cache bust v2025.08.03.004
-  "echo 'FORCING FRESH BUILD - Cache Bust ID: v2025.08.03.004'",
+  # FORCE FRESH BUILD - Railway cache bust v2025.08.03.005
+  "echo 'FORCING FRESH BUILD - Cache Bust ID: v2025.08.03.005'",
   "rm -rf dist || true",
   "rm -rf .vite || true",
   "rm -rf node_modules/.vite || true",
@@ -123,7 +123,7 @@ NO_COLOR = "1"
 # Build performance monitoring
 MEASURE_BUILD_TIME = "true"
 # Force cache invalidation - Firebase env vars fix
-BUILD_ID = "v2025.08.03.004"
+BUILD_ID = "v2025.08.03.005"
 CACHE_BUST_TIMESTAMP = "2025-08-03T14:15:00Z"
 FORCE_FRESH_BUILD = "true"
 # Firebase environment validation

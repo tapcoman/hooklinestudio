@@ -7,7 +7,14 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
   plugins: [
     react({
       jsxRuntime: 'automatic',
-      jsxImportSource: 'react'
+      jsxImportSource: 'react',
+      babel: {
+        plugins: [
+          ['@babel/plugin-transform-react-jsx', {
+            runtime: 'automatic'
+          }]
+        ]
+      }
     }),
     // Only include Replit-specific plugins in development on Replit
     ...(mode !== "production" &&
@@ -36,7 +43,13 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
     minify: "esbuild",
     sourcemap: process.env['NODE_ENV'] !== "production",
     rollupOptions: {
+      external: [],
       output: {
+        format: 'es',
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'react-hooks': ['react', 'react-dom']
+        },
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name?.split(".") || [];
           const ext = info[info.length - 1] || "";
@@ -48,8 +61,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
           }
           return `assets/[name]-[hash][extname]`;
         },
-        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.002.js",
-        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.002.js",
+        chunkFileNames: "assets/js/[name]-[hash]-v2025.08.03.003.js",
+        entryFileNames: "assets/js/[name]-[hash]-v2025.08.03.003.js",
       },
     },
     chunkSizeWarningLimit: 1000,
@@ -60,6 +73,13 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
     reportCompressedSize: process.env['NODE_ENV'] !== "production",
     // Enable build caching for faster rebuilds
     write: true,
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    force: true,
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
   },
   server: {
     fs: {
