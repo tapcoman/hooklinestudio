@@ -1,21 +1,6 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
-
-// Configure WebSocket for Neon serverless, but handle Railway's connectivity timing
-neonConfig.webSocketConstructor = ws;
-
-// For Railway deployments, add more aggressive connection retry and timeout settings
-if (process.env.RAILWAY_ENVIRONMENT) {
-  neonConfig.wsProxy = (host) => {
-    // For Railway internal URLs, add retry logic
-    if (host.includes('railway.internal')) {
-      console.log(`Connecting to Railway internal database: ${host}`);
-    }
-    return `${host}`;
-  };
-}
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -34,34 +19,24 @@ if (process.env.NODE_ENV === 'production' && !dbUrl.searchParams.has('sslmode'))
   dbUrl.searchParams.set('sslmode', 'require');
 }
 
-// Optimized connection pool configuration for production performance
-// Special handling for Railway's internal URLs and timing issues
+// Railway PostgreSQL connection pool configuration
 const isRailwayEnvironment = !!process.env.RAILWAY_ENVIRONMENT;
 const isRailwayInternalUrl = process.env.DATABASE_URL?.includes('railway.internal');
 
-export const pool = new Pool({ 
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: process.env.NODE_ENV === 'production' ? 15 : 10, // More conservative max connections
-  min: isRailwayEnvironment ? 2 : 1, // Ensure minimum connections for health checks
-  idleTimeoutMillis: 60000, // Standard idle timeout
-  connectionTimeoutMillis: isRailwayInternalUrl ? 30000 : 10000, // Generous timeout for Railway internal URLs
-  statementTimeout: 30000, // More generous statement timeout
-  query_timeout: 30000, // More generous query timeout
-  acquireTimeoutMillis: isRailwayInternalUrl ? 45000 : 15000, // Railway-optimized acquire timeout
-  createTimeoutMillis: isRailwayInternalUrl ? 30000 : 10000, // Railway-optimized create timeout
-  destroyTimeoutMillis: 5000, // Standard destroy timeout
-  reapIntervalMillis: 5000, // Standard cleanup interval
-  createRetryIntervalMillis: isRailwayInternalUrl ? 3000 : 1000, // Reasonable retries for Railway
-  propagateCreateError: true, // Show connection errors for debugging
-  // Railway-specific optimizations
-  allowExitOnIdle: false, // Keep connections alive for health checks
-  maxUses: 10000, // Standard connection rotation
+  max: process.env.NODE_ENV === 'production' ? 15 : 10,
+  min: isRailwayEnvironment ? 2 : 1,
+  idleTimeoutMillis: 60000,
+  connectionTimeoutMillis: isRailwayInternalUrl ? 30000 : 10000,
+  statement_timeout: 30000,
+  query_timeout: 30000,
   application_name: `hooklinestudio-${process.env.RAILWAY_ENVIRONMENT || 'local'}`,
-  // Enhanced SSL configuration for Railway
+  // Railway PostgreSQL SSL configuration
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-export const db = drizzle({ client: pool, schema });
+export const db = drizzle(pool, { schema });
 
 // Database connection health checker function
 export async function testDatabaseConnection(timeout = 10000): Promise<{ success: boolean; error?: string; connectionInfo?: any }> {

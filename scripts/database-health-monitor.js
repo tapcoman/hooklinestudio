@@ -5,7 +5,7 @@
  * Monitors database connectivity, performs health checks, and provides operational insights
  */
 
-import { Pool } from '@neondatabase/serverless';
+import { Pool } from 'pg';
 
 // Configuration
 const DB_URL = process.env.DATABASE_URL;
@@ -25,7 +25,7 @@ const pool = new Pool({
   min: 1,
   connectionTimeoutMillis: CONNECTION_TIMEOUT,
   idleTimeoutMillis: 30000,
-  statementTimeout: 20000,
+  statement_timeout: 20000,
   query_timeout: 20000,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
