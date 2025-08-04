@@ -1,7 +1,8 @@
 import React, { Component, ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { AlertTriangle, RefreshCw, Home, Copy } from "lucide-react";
+import { debugLogger } from "@/utils/debugLogger";
 
 interface Props {
   children: ReactNode;
@@ -39,21 +40,41 @@ class ErrorBoundary extends Component<Props, State> {
       errorInfo,
     });
 
+    // Log to debug logger
+    debugLogger.logComponentError('ErrorBoundary', error);
+
     // Call the optional onError callback
     this.props.onError?.(error, errorInfo);
 
-    // Log error to console in development
+    // Enhanced logging for development
     if (process.env.NODE_ENV === "development") {
-      console.error("Error Boundary caught an error:", error, errorInfo);
+      console.group('🚨 ERROR BOUNDARY CAUGHT ERROR');
+      console.error('Error:', error);
+      console.error('Error Info:', errorInfo);
+      console.error('Stack:', error.stack);
+      console.error('Component Stack:', errorInfo.componentStack);
+      console.groupEnd();
     }
   }
 
   handleReset = () => {
+    debugLogger.logInfo('Error boundary reset', 'ErrorBoundary');
     this.setState({
       hasError: false,
       error: null,
       errorInfo: null,
     });
+  };
+
+  handleCopyError = () => {
+    if (this.state.error) {
+      const errorText = `Error: ${this.state.error.toString()}\n\nStack: ${this.state.error.stack}\n\nComponent Stack: ${this.state.errorInfo?.componentStack || 'N/A'}`;
+      navigator.clipboard.writeText(errorText).then(() => {
+        console.log('Error details copied to clipboard');
+      }).catch(() => {
+        console.log('Failed to copy error details');
+      });
+    }
   };
 
   handleGoHome = () => {
@@ -86,26 +107,45 @@ class ErrorBoundary extends Component<Props, State> {
                   </p>
                 </div>
 
-                {process.env.NODE_ENV === "development" && this.state.error && (
+                {this.state.error && (
                   <details className="text-left bg-slate-100 p-4 rounded-lg text-sm">
                     <summary className="cursor-pointer font-medium text-slate-700 mb-2">
-                      Error Details (Development)
+                      Error Details
                     </summary>
                     <div className="space-y-2">
-                      <div>
+                      <div className="flex justify-between items-start">
                         <strong>Error:</strong>
-                        <pre className="mt-1 text-xs bg-white p-2 rounded border overflow-auto">
-                          {this.state.error.toString()}
-                        </pre>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={this.handleCopyError}
+                          className="h-6 px-2"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
                       </div>
+                      <pre className="mt-1 text-xs bg-white p-2 rounded border overflow-auto max-h-32">
+                        {this.state.error.toString()}
+                      </pre>
+                      {this.state.error.stack && (
+                        <div>
+                          <strong>Stack Trace:</strong>
+                          <pre className="mt-1 text-xs bg-white p-2 rounded border overflow-auto max-h-32">
+                            {this.state.error.stack}
+                          </pre>
+                        </div>
+                      )}
                       {this.state.errorInfo && (
                         <div>
                           <strong>Component Stack:</strong>
-                          <pre className="mt-1 text-xs bg-white p-2 rounded border overflow-auto">
+                          <pre className="mt-1 text-xs bg-white p-2 rounded border overflow-auto max-h-32">
                             {this.state.errorInfo.componentStack}
                           </pre>
                         </div>
                       )}
+                      <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
+                        <strong>💡 Debug Tip:</strong> Check the browser console for more detailed error logs. You can also use <code>window.debugLogger.getErrors()</code> in the console.
+                      </div>
                     </div>
                   </details>
                 )}
@@ -136,6 +176,7 @@ export default ErrorBoundary;
 // Hook-based error boundary for functional components
 export function useErrorHandler() {
   return (error: Error, errorInfo?: React.ErrorInfo) => {
+    debugLogger.logComponentError('useErrorHandler', error);
     console.error("Error caught by error handler:", error, errorInfo);
     // Could integrate with error reporting service here
   };

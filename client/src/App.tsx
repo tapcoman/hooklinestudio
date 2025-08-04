@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import NotFound from "@/pages/not-found";
 import FirebaseAuthPage from "@/pages/firebase-auth-page";
 import Landing from "./pages/landing";
 import ErrorBoundary from "@/components/error-boundary";
+import { debugLogger } from "@/utils/debugLogger";
 
 // Lazy load heavy components for better performance
 const Onboarding = lazy(() => import("./pages/onboarding"));
@@ -36,6 +37,15 @@ function AppRouter() {
   const { user, loading, isAuthReady, loginMutation } = useFirebaseAuth();
   const isAuthenticated = !!user;
   const isLoading = loading;
+
+  useEffect(() => {
+    debugLogger.logInfo('AppRouter render', 'AppRouter', {
+      user: user ? 'authenticated' : 'not authenticated',
+      loading,
+      isAuthReady,
+      loginMutationPending: loginMutation.isPending
+    });
+  }, [user, loading, isAuthReady, loginMutation.isPending]);
 
   // Show loading until auth is ready to prevent "page not found" flash
   if (!isAuthReady || isLoading || loginMutation.isPending || loading) {
@@ -173,6 +183,10 @@ function AppRouter() {
 }
 
 export default function App() {
+  useEffect(() => {
+    debugLogger.logInfo('App component mounted', 'App');
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <FirebaseAuthProvider>

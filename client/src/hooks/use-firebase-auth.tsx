@@ -6,6 +6,7 @@ import { signInWithCustomToken } from "firebase/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { User as BackendUser } from "@shared/schema";
+import { debugLogger } from "@/utils/debugLogger";
 
 interface LoginData {
   email: string;
@@ -44,8 +45,17 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
 
   // Listen to Firebase auth state changes
   useEffect(() => {
+    debugLogger.logInfo('Firebase auth provider initializing', 'FirebaseAuth');
+    
     if (!auth) {
       console.warn("[Auth] Firebase authentication not available - environment variables not configured");
+      debugLogger.logError({
+        message: 'Firebase auth not available - environment variables not configured',
+        component: 'FirebaseAuth',
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      });
       setLoading(false);
       setIsAuthReady(true); // Mark as ready so UI can show appropriate messaging
       return;
